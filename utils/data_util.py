@@ -5,9 +5,12 @@ import random
 import torch
 import matplotlib.pyplot as plt
 
-DATA_DIR = './data/2D/evaluation dataset'
+# set random seed
+random.seed(0)
 
-def get_input_data(seq_len, batch_size, datadir=DATA_DIR):
+DATA_DIR = '/home/anees.hashmi/Desktop/ML703/data/2D/evaluation_data'
+
+def get_input_data(seq_len, batch_size, csv_name = None,datadir=DATA_DIR):
     """
     Returns the input data for training the model
     arguments:
@@ -23,8 +26,16 @@ def get_input_data(seq_len, batch_size, datadir=DATA_DIR):
     # CSV_NAME = os.listdir(datadir)[0]
     # print("Loading data from {}".format(os.path.join(datadir, f'{CSV_NAME}')))
 
+<<<<<<< Updated upstream
     # df = pd.read_csv(os.path.join(datadir, f'{CSV_NAME}'))
     df = pd.read_csv(datadir)
+=======
+    # CSV_NAME = os.listdir(datadir)[0]
+    CSV_NAME = csv_name
+    print("Loading data from {}".format(os.path.join(datadir, f'{CSV_NAME}')))
+
+    df = pd.read_csv(os.path.join(datadir, f'{CSV_NAME}'))
+>>>>>>> Stashed changes
 
     num_batches = (len(df) - seq_len) // (batch_size)
 
@@ -34,7 +45,6 @@ def get_input_data(seq_len, batch_size, datadir=DATA_DIR):
     if 'ekf_pos_x' in df.columns:
         ekf_pred = df[["ekf_pos_x", "ekf_pos_y", "ekf_pos_theta"]].to_numpy() # used for comparison
         ukf_pred = df[["ukf_pos_x", "ukf_pos_y", "ukf_pos_theta"]].to_numpy() # used for comparison
-
 
     input_data_df = df[
             ['noisy_motion_x', 'noisy_motion_y', 'noisy_motion_theta',
@@ -50,7 +60,6 @@ def get_input_data(seq_len, batch_size, datadir=DATA_DIR):
 
     # output_data = labels[:num_batches * batch_size]
     output_data = labels.copy()
-
 
 
     new_input_data = []
@@ -148,7 +157,7 @@ def get_input_data_1D(seq_len, batch_size, datadir=DATA_DIR):
 
     return new_input_data, new_output_data, new_kp_data
 
-def train_test_split(*data, test_size=0.2):
+def train_test_split(data, test_size=0.2):
 
     '''
     Splits the data into train and test sets
@@ -167,10 +176,15 @@ def train_test_split(*data, test_size=0.2):
     test_data, train_data = [], []
 
     for input_data in data:
+        # print('')
+        # print("input data shape")
+        # print(type(input_data))
+        # print(input_data.shape)
+        # print('')
 
         test_data.append(input_data[test_idx])
         train_data.append(input_data[train_idx])
-
+    
     return train_data, test_data
 
 def get_dataloader(X,y, batch_size, shuffle=False):

@@ -1,3 +1,4 @@
+import argparse
 import torch
 from torch import nn
 from model import SimpleRNN, RNNModel, Base
@@ -23,6 +24,7 @@ def train_ray(config,cfg):
     if torch.cuda.is_available():
         device = "cuda:0"
     
+<<<<<<< Updated upstream
     # setup data
     print("current working directory: {}".format(os.getcwd()))
     if cfg.DATA.SETTING == '2D':
@@ -35,6 +37,13 @@ def train_ray(config,cfg):
     train_data, valid_data = train_test_split(X, y, test_size=0.2)
     train_loader = get_dataloader(train_data[0],train_data[1], batch_size=cfg.SOLVER.BATCH_SIZE)
     valid_loader = get_dataloader(valid_data[0],valid_data[1], batch_size=cfg.SOLVER.BATCH_SIZE)
+=======
+    # X contains all the data (input, output, kalman, ekf, ukf)
+    X = get_input_data(seq_len = config['sequence_length'], batch_size = params['batch_size'], datadir=params['TRAIN_DATA_DIR'], csv_name=params['TRAIN_DATA_CSV_NAME'])
+    train_data, valid_data = train_test_split(X, test_size=0.2)
+    train_loader = get_dataloader(train_data[0],train_data[1], batch_size=params['batch_size'])
+    valid_loader = get_dataloader(valid_data[0],valid_data[1], batch_size=params['batch_size'])
+>>>>>>> Stashed changes
 
     # setup model
     print("Using model: {}".format(cfg.MODEL.TYPE))
@@ -121,46 +130,66 @@ def test_accuracy(net, test_loader, device="cpu"):
 
     return loss / total, test_pred
 
+<<<<<<< Updated upstream
 def main(cfg):
+=======
+def main(cmd_args):
+>>>>>>> Stashed changes
 
     # hyperparameter
-    num_epochs = 10
-    batch_size = 100
+    # num_epochs = 300
+    # batch_size = 100
+    num_epochs = cmd_args['num_epochs']
+    batch_size = cmd_args['batch_size']
+
     gpus_per_trial = 1
 
-    TRAIN_DATA_DIR = os.path.abspath("./data/2D/generated_data") 
-    EVAL_DATA_DIR = os.path.abspath('./data/2D/evaluation_data')  
+    TRAIN_DATA_DIR = os.path.abspath("/home/anees.hashmi/Desktop/ML703/data/2D/generated_data") 
+    EVAL_DATA_DIR = os.path.abspath('/home/anees.hashmi/Desktop/ML703/data/2D/evaluation_data')  
+
+    # loop over this for multiple files
+    # TRAIN_DATA_CSV_PATH = os.listdir(TRAIN_DATA_DIR)[1]
+    # TRAIN_DATA_CSV_NAME = 'generated_data_fbcampus_2.csv'
+    TRAIN_DATA_CSV_NAME = cmd_args['train_csv']
 
     # configurable parameters
     config = {
-        "hidden_size": tune.sample_from(lambda _: 2 ** np.random.randint(2, 9)),
+        "hidden_size": tune.sample_from(lambda _: 2 ** np.random.randint(5, 9)),
         "lr": tune.loguniform(1e-4, 1e-1),
         "num_layers": tune.choice([1, 2, 3]),
-        'sequence_length': tune.choice([28, 56, 112]),
+        'sequence_length': tune.choice([10, 32, 64, 50]),
     }
 
+
+    # # configurable parameters
+    # config = {
+    #     "hidden_size": 2 ** np.random.randint(2, 9),
+    #     "lr": random.choice([1e-4, 1e-2]),
+    #     "num_layers": random.choice([1, 2, 3]),
+    #     'sequence_length': random.choice([28, 56, 112]),
+    # }
     # fixed parameters
     params = {
         "batch_size": batch_size,
         "model_name": "SimpleRNN",
-        "input_size": 19,
-        "output_size": 3,
-        "num_epochs": num_epochs,
-        "log_step": 500,
+        "input_size": cmd_args['input_size'],
+        "output_size": cmd_args['output_size'],
+        "num_epochs": cmd_args['epochs'],
+        "log_step": 100,
         'TRAIN_DATA_DIR': TRAIN_DATA_DIR,
+        'TRAIN_DATA_CSV_NAME': TRAIN_DATA_CSV_NAME,
         'setting': '2D',
         'EVAL_DATA_DIR': EVAL_DATA_DIR,
         'environment': 'fbcampus',
 
     }
 
-    # setup device
-    device = 'cpu'
-    if torch.cuda.is_available():
-        device = "cuda:0"
+    # # setup device
+    # device = 'cpu'
+    # if torch.cuda.is_available():
+    #     device = "cuda:0"
 
 
-    # train using raytune
     scheduler = ASHAScheduler(
         metric="loss",
         mode="min",
@@ -171,8 +200,8 @@ def main(cfg):
     tuner = tune.Tuner(
         tune.with_resources(tune.with_parameters(train_ray, cfg=cfg), {'cpu':32, 'gpu':gpus_per_trial}),
         tune_config=tune.TuneConfig(
-        num_samples=20,
-        scheduler=scheduler,
+            num_samples=20,
+            scheduler=scheduler,
         ),
         param_space=config,
         # run_config=air.RunConfig(local_dir="./logs", name="first_run")  
@@ -185,7 +214,12 @@ def main(cfg):
     best_trial.config["metric"] = best_trial.metrics["loss"]
 
     # save best config as json
+<<<<<<< Updated upstream
     with open('{}/best_config_{}.json'.format(cfg.OUTPUT.OUTPUT_DIR, cfg.DATA.TRAIN_DATA_DIR.split('/')[-1][:-4]), 'w') as fp:
+=======
+    os.makedirs('logs', exist_ok=True)
+    with open('logs/best_config_{}_{}.json'.format(params['setting'], TRAIN_DATA_CSV_NAME), 'w') as fp:
+>>>>>>> Stashed changes
         json.dump(best_trial.config, fp, sort_keys=True, indent=4)
         # json.dump(best_trial.metrics, fp, sort_keys=True, indent=4)
         # json.dump({'dir':str(best_trial.log_dir)}, fp, sort_keys=True, indent=4)
@@ -218,6 +252,7 @@ def main(cfg):
     # plot_data(to_plot)
 
 if __name__ == "__main__":
+<<<<<<< Updated upstream
     parser = argparse.ArgumentParser(description="Neural networks for robot state estimation")
     parser.add_argument(
         "--config_file", default="", help="path to config file", type=str
@@ -244,3 +279,16 @@ if __name__ == "__main__":
         os.makedirs(output_dir)
 
     main(cfg)
+=======
+    # cmd_args 
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--train_csv', type=str, default='generated_data_fbcampus_2.csv', help='name of the csv file to train on')
+    parser.add_argument('--input_size', type=int, default=19, help='input size of the model')
+    parser.add_argument('--output_size', type=int, default=3, help='output size of the model')
+    parser.add_argument('--epochs', type=int, default=100, help='number of epochs to train for')
+    parser.add_argument('--batch_size', type=int, default=128, help='batch size to train on')
+    args = parser.parse_args()
+    cmd_args = vars(args)
+
+    main(cmd_args=cmd_args)
+>>>>>>> Stashed changes
