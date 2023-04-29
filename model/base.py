@@ -4,7 +4,7 @@ from model import SimpleRNN, RNNModel
 
 _models = {
     "SimpleRNN": SimpleRNN,
-    "RNNModel": RNNModel
+    "RNNModel": RNNModel,
 }
 
 class Base(nn.Module):

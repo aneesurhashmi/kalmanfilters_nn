@@ -19,11 +19,12 @@ def get_input_data(seq_len, batch_size, datadir=DATA_DIR):
         y: labels
         y_kalman: kalman predictions
     """
+    # print(os.path.abspath(datadir))
+    # CSV_NAME = os.listdir(datadir)[0]
+    # print("Loading data from {}".format(os.path.join(datadir, f'{CSV_NAME}')))
 
-    CSV_NAME = os.listdir(datadir)[0]
-    print("Loading data from {}".format(os.path.join(datadir, f'{CSV_NAME}')))
-
-    df = pd.read_csv(os.path.join(datadir, f'{CSV_NAME}'))
+    # df = pd.read_csv(os.path.join(datadir, f'{CSV_NAME}'))
+    df = pd.read_csv(datadir)
 
     num_batches = (len(df) - seq_len) // (batch_size)
 
@@ -93,15 +94,14 @@ def get_input_data_1D(seq_len, batch_size, datadir=DATA_DIR):
         y_kalman: kalman predictions
     """
 
-    CSV_NAME = os.listdir(datadir)[0]
-    print("Loading data from {}".format(os.path.join(datadir, f'{CSV_NAME}')))
+    # CSV_NAME = os.listdir(datadir)[0]
+    # print("Loading data from {}".format(os.path.join(datadir, f'{CSV_NAME}')))
 
-    df = pd.read_csv(os.path.join(datadir, f'{CSV_NAME}'))
-
+    # df = pd.read_csv(os.path.join(datadir, f'{CSV_NAME}'))
+    df = pd.read_csv(datadir)
     num_batches = (len(df) - seq_len) // (batch_size)
-
-    labels = df[["Ground truth" ]].to_numpy()
-    kalman_pred = df[["Kalman prediction"]].to_numpy() # used for comparison
+    labels = df[["ground truth" ]].to_numpy()
+    kalman_pred = df[["kalman prediction"]].to_numpy() # used for comparison
 
     if 'ekf_pos_x' in df.columns:
         ekf_pred = df[["ekf_pos_x", "ekf_pos_y", "ekf_pos_theta"]].to_numpy() # used for comparison
@@ -109,9 +109,9 @@ def get_input_data_1D(seq_len, batch_size, datadir=DATA_DIR):
 
 
     input_data_df = df[
-            ['noisy_motion','Laser range 6'
-            'Laser range 1','Laser range 2','Laser range 3', 'Laser range 4', 'Laser range 5',
-            'Motion noise stdev', 'Laser noise stdev']
+            ['noisy motion',
+            'laser range 1','laser range 2','laser range 3', 'laser range 4', 'laser range 5','laser range 6',
+            'motion noise stdev', 'laser noise stdev']
     ].to_numpy()
 
     # input_data = input_data_df[:num_batches * batch_size]
@@ -193,3 +193,13 @@ def plot_data(data):
         plt.legend([key, 'y_test'])
         plt.title(key)
         plt.show()
+
+if __name__ == '__main__':
+
+    datadir = './data/2D/generated_data' 
+    CSV_NAME = os.listdir(datadir)[1]
+    print("Loading data from {}".format(os.path.join(datadir, f'{CSV_NAME}')))
+
+    X,y, y_kalman = get_input_data(10, 32, datadir=os.path.join(datadir, f'{CSV_NAME}'))
+
+    print(X.shape)

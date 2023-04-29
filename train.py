@@ -7,30 +7,39 @@ from ray.tune.schedulers import ASHAScheduler
 from ray.tune import CLIReporter
 import ray
 from ray import tune, air
-from utils import train_test_split, get_dataloader, get_input_data, plot_data
+from utils import train_test_split, get_dataloader, get_input_data, plot_data, get_input_data_1D
 import numpy as np
 import json
 import random
+import argparse
+from config import cfg
 
 random.seed(0)
 torch.manual_seed(0)
 
-def train_ray(config,params):
+def train_ray(config,cfg):
 
     device="cpu"
     if torch.cuda.is_available():
         device = "cuda:0"
     
     # setup data
-    X, y, _ =  get_input_data(seq_len = config['sequence_length'], batch_size = params['batch_size'], datadir=params['TRAIN_DATA_DIR'])
+    print("current working directory: {}".format(os.getcwd()))
+    if cfg.DATA.SETTING == '2D':
+        X, y, _ =  get_input_data(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=cfg.DATA.TRAIN_DATA_DIR)
+    elif cfg.DATA.SETTING == '1D':
+        X, y, _ =  get_input_data_1D(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=cfg.DATA.TRAIN_DATA_DIR)
+    else:
+        raise ValueError("Environment not supported")
+    
     train_data, valid_data = train_test_split(X, y, test_size=0.2)
-    train_loader = get_dataloader(train_data[0],train_data[1], batch_size=params['batch_size'])
-    valid_loader = get_dataloader(valid_data[0],valid_data[1], batch_size=params['batch_size'])
+    train_loader = get_dataloader(train_data[0],train_data[1], batch_size=cfg.SOLVER.BATCH_SIZE)
+    valid_loader = get_dataloader(valid_data[0],valid_data[1], batch_size=cfg.SOLVER.BATCH_SIZE)
 
     # setup model
-    print("Using model: {}".format(params["model_name"]))
-    model = Base(input_size=params['input_size'], hidden_size = config["hidden_size"], 
-                      num_layers = config["num_layers"], output_size = params['output_size'], model=params["model_name"])
+    print("Using model: {}".format(cfg.MODEL.TYPE))
+    model = Base(input_size=cfg.MODEL.INPUT_SIZE, hidden_size = config["hidden_size"], 
+                      num_layers = config["num_layers"], output_size = cfg.MODEL.OUTPUT_SIZE, model=cfg.MODEL.TYPE)
     
     if torch.cuda.device_count() > 1:
         model = nn.DataParallel(model)
@@ -39,7 +48,7 @@ def train_ray(config,params):
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=config["lr"])
 
-    for epoch in range(params['num_epochs']):
+    for epoch in range(cfg.SOLVER.NUM_EPOCHS):
 
         running_loss = 0.0
         epoch_steps = 0
@@ -60,10 +69,10 @@ def train_ray(config,params):
             # print statistics
             running_loss += loss.item()
             epoch_steps += 1
-            # if i % params['log_step'] == 0:  # print every 2000 mini-batches
-            #     print("[%d, %5d] loss: %.3f" % (epoch + 1, i + 1,
-            #                                     running_loss / epoch_steps))
-            #     running_loss = 0.0
+            if i % cfg.SOLVER.LOG_STEP == 0:  # print every 2000 mini-batches
+                print("[%d, %5d] loss: %.3f" % (epoch + 1, i + 1,
+                                                running_loss / epoch_steps))
+                running_loss = 0.0
 
         # Validation loss
         val_loss = 0.0
@@ -89,6 +98,7 @@ def train_ray(config,params):
             torch.save((model.state_dict(), optimizer.state_dict()), path)
 
         tune.report(loss=(val_loss / val_steps))
+
     print("Finished Training")
 
 
@@ -111,7 +121,7 @@ def test_accuracy(net, test_loader, device="cpu"):
 
     return loss / total, test_pred
 
-def main():
+def main(cfg):
 
     # hyperparameter
     num_epochs = 10
@@ -139,7 +149,9 @@ def main():
         "log_step": 500,
         'TRAIN_DATA_DIR': TRAIN_DATA_DIR,
         'setting': '2D',
-        'EVAL_DATA_DIR': EVAL_DATA_DIR
+        'EVAL_DATA_DIR': EVAL_DATA_DIR,
+        'environment': 'fbcampus',
+
     }
 
     # setup device
@@ -157,7 +169,7 @@ def main():
         reduction_factor=2)
     
     tuner = tune.Tuner(
-        tune.with_resources(tune.with_parameters(train_ray, params=params), {'cpu':32, 'gpu':gpus_per_trial}),
+        tune.with_resources(tune.with_parameters(train_ray, cfg=cfg), {'cpu':32, 'gpu':gpus_per_trial}),
         tune_config=tune.TuneConfig(
         num_samples=20,
         scheduler=scheduler,
@@ -171,14 +183,15 @@ def main():
     best_trial = results.get_best_result("loss", "min", "last")
     best_trial.config['dir'] = str(best_trial.log_dir)
     best_trial.config["metric"] = best_trial.metrics["loss"]
+
     # save best config as json
-    with open('logs/best_config_{}.json'.format(params['setting']), 'w') as fp:
+    with open('{}/best_config_{}.json'.format(cfg.OUTPUT.OUTPUT_DIR, cfg.DATA.TRAIN_DATA_DIR.split('/')[-1][:-4]), 'w') as fp:
         json.dump(best_trial.config, fp, sort_keys=True, indent=4)
         # json.dump(best_trial.metrics, fp, sort_keys=True, indent=4)
         # json.dump({'dir':str(best_trial.log_dir)}, fp, sort_keys=True, indent=4)
 
     print("Best trial config: {}".format(best_trial.config))
-    print("Best trial final validation loss: {}".format(best_trial.metrics))
+    print("Best trial final validation loss: {}".format(best_trial.metrics["loss"]))
     
     # test on evaluation data
     # X_test, y_test, y_kalman_test, y_ekf_test, y_ukf_test = get_input_data(seq_len = best_trial.config['sequence_length'], batch_size = params['batch_size'], datadir=EVAL_DATA_DIR)
@@ -205,4 +218,29 @@ def main():
     # plot_data(to_plot)
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Neural networks for robot state estimation")
+    parser.add_argument(
+        "--config_file", default="", help="path to config file", type=str
+    )
+
+    parser.add_argument("opts", help="Modify config options using the command-line", default=None,
+                        nargs=argparse.REMAINDER)
+    args = parser.parse_args()
+
+    if args.config_file != "":
+        cfg.merge_from_file(args.config_file)
+    cfg.merge_from_list(args.opts)
+
+    # Get absolute path for data and output directory
+    cfg.DATA.TRAIN_DATA_DIR = os.path.abspath(cfg.DATA.TRAIN_DATA_DIR)
+    cfg.DATA.EVAL_DATA_DIR = os.path.abspath(cfg.DATA.EVAL_DATA_DIR)
+    cfg.OUTPUT.OUTPUT_DIR = os.path.abspath(cfg.OUTPUT.OUTPUT_DIR)
+    cfg.freeze()
+    
+    print("running with config:\n{}".format(cfg))
+
+    output_dir = cfg.OUTPUT.OUTPUT_DIR
+    if output_dir and not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    main(cfg)

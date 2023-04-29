@@ -1,0 +1,23 @@
+DATA:
+  ENVIRONMENT: fbcampus
+  EVAL_DATA_DIR: ./data/2D/evaluation_data
+  SETTING: 1D
+  TRAIN_DATA_DIR: ./data/2D/generated_data
+
+MODEL:
+  HIDDEN_SIZE: 128
+  INPUT_SIZE: 9
+  TYPE: SimpleRNN
+  NUM_LAYERS: 2
+  OUTPUT_SIZE: 1
+  SEQUENCE_LENGTH: 28
+
+OUTPUT:
+  OUTPUT_DIR: ./output
+  PLOT: True
+
+SOLVER:
+  BATCH_SIZE: 100
+  LOG_STEP: 2000
+  LR: 0.001
+  NUM_EPOCHS: 100
