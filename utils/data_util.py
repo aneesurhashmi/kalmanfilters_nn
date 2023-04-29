@@ -189,6 +189,7 @@ def plot_data(data):
 
         plt.plot(values)
         plt.plot(data["y_test"])
+        
         plt.legend([key, 'y_test'])
         plt.title(key)
         plt.show()
