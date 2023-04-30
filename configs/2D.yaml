@@ -5,8 +5,10 @@ DATA:
   TRAIN_DATA_DIR: ./data/2D/generated_data
 MODEL:
   HIDDEN_SIZE: 128
-  INPUT_SIZE: 19
-  TYPE: SimpleRNN
+  # INPUT_SIZE: 19
+  # TYPE: SimpleRNN
+  INPUT_SIZE: 18 # no alpha value
+  TYPE:  LSTM # RNN or LSTM
   NUM_LAYERS: 2
   OUTPUT_SIZE: 3
   SEQUENCE_LENGTH: 28
@@ -18,3 +20,4 @@ SOLVER:
   LOG_STEP: 500
   LR: 0.001
   NUM_EPOCHS: 100
+  GPUS_PER_TRIAL: 1

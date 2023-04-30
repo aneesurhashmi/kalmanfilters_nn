@@ -26,16 +26,8 @@ def get_input_data(seq_len, batch_size, csv_name = None,datadir=DATA_DIR):
     # CSV_NAME = os.listdir(datadir)[0]
     # print("Loading data from {}".format(os.path.join(datadir, f'{CSV_NAME}')))
 
-<<<<<<< Updated upstream
     # df = pd.read_csv(os.path.join(datadir, f'{CSV_NAME}'))
     df = pd.read_csv(datadir)
-=======
-    # CSV_NAME = os.listdir(datadir)[0]
-    CSV_NAME = csv_name
-    print("Loading data from {}".format(os.path.join(datadir, f'{CSV_NAME}')))
-
-    df = pd.read_csv(os.path.join(datadir, f'{CSV_NAME}'))
->>>>>>> Stashed changes
 
     num_batches = (len(df) - seq_len) // (batch_size)
 
@@ -52,7 +44,7 @@ def get_input_data(seq_len, batch_size, csv_name = None,datadir=DATA_DIR):
             'noisy_motion_cov_yy', 'noisy_motion_cov_ytheta',
             'noisy_motion_cov_thetatheta', 'lidar_x', 'lidar_y', 'lidar_theta',
             'lidar_cov_xx', 'lidar_cov_xy', 'lidar_cov_xtheta', 'lidar_cov_yy',
-            'lidar_cov_ytheta', 'lidar_cov_thetatheta', 'alpha']
+            'lidar_cov_ytheta', 'lidar_cov_thetatheta']
     ].to_numpy()
 
     # input_data = input_data_df[:num_batches * batch_size]

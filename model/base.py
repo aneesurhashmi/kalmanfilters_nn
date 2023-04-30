@@ -1,14 +1,14 @@
 from torch import nn
 import torch
-from model import SimpleRNN, RNNModel
+from model import RNN , LSTM
 
 _models = {
-    "SimpleRNN": SimpleRNN,
-    "RNNModel": RNNModel,
+    "RNN": RNN,
+    "LSTM": LSTM
 }
 
 class Base(nn.Module):
-    def __init__(self, input_size, hidden_size, num_layers, output_size, model='SimpleRNN', *args):
+    def __init__(self, input_size, hidden_size, num_layers, output_size, model='RNN', *args):
         super(Base, self).__init__()
         self.hidden_size = hidden_size
         self.num_layers = num_layers

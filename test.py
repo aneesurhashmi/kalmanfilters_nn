@@ -1,7 +1,7 @@
 import json
 import ray
 from ray import tune
-from model import SimpleRNN, RNNModel, Base
+from model import RNN, RNNModel, Base
 from utils import plot_data, get_input_data, get_dataloader
 import os
 import torch

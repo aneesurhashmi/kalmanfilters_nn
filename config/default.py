@@ -4,7 +4,7 @@ _C = CN()
 
 # model default values
 _C.MODEL = CN()
-_C.MODEL.TYPE = "SimpleRNN"
+_C.MODEL.TYPE = "RNN"
 _C.MODEL.INPUT_SIZE = 19
 _C.MODEL.OUTPUT_SIZE = 3
 _C.MODEL.HIDDEN_SIZE = 128
@@ -17,6 +17,7 @@ _C.SOLVER.NUM_EPOCHS = 100
 _C.SOLVER.BATCH_SIZE = 100
 _C.SOLVER.LR = 0.001
 _C.SOLVER.LOG_STEP = 500
+_C.SOLVER.GPUS_PER_TRIAL = 1
 
 # Data default values
 _C.DATA = CN()
@@ -29,4 +30,3 @@ _C.DATA.ENVIRONMENT = 'fbcampus'
 _C.OUTPUT = CN()
 _C.OUTPUT.OUTPUT_DIR = "./output"
 _C.OUTPUT.PLOT = True
-
