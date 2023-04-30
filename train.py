@@ -57,8 +57,8 @@ def train_ray(config,cfg):
 
     for epoch in range(cfg.SOLVER.NUM_EPOCHS):
 
-        running_loss = 0.0
-        epoch_steps = 0
+        # running_loss = 0.0
+        # epoch_steps = 0
         for i, data in enumerate(train_loader, 0):
             # get the inputs; data is a list of [inputs, labels]
             inputs, labels = data
@@ -74,12 +74,12 @@ def train_ray(config,cfg):
             optimizer.step()
 
             # print statistics
-            running_loss += loss.item()
-            epoch_steps += 1
-            if i % cfg.SOLVER.LOG_STEP == 0:  # print every 2000 mini-batches
-                print("[%d, %5d] loss: %.3f" % (epoch + 1, i + 1,
-                                                running_loss / epoch_steps))
-                running_loss = 0.0
+            # running_loss += loss.item()
+            # epoch_steps += 1
+            # if i % cfg.SOLVER.LOG_STEP == 0:  # print every 2000 mini-batches
+            #     print("[%d, %5d] loss: %.3f" % (epoch + 1, i + 1,
+            #                                     running_loss / epoch_steps))
+            # running_loss = 0.0
 
         # Validation loss
         val_loss = 0.0

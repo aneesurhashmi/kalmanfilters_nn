@@ -1,17 +1,18 @@
 import json
 import ray
 from ray import tune
-from model import RNN, RNNModel, Base
+from model import RNN,  Base
 from utils import plot_data, get_input_data, get_dataloader
 import os
 import torch
 from torch import nn
 import numpy as np
+
 TRAIN_DATA_DIR = './data/2D/generated_data'
 EVAL_DATA_DIR = './data/2D/evaluation_data'
 
 # model dictionary
-_models = ["SimpleRNN", "RNNModel"]
+_models = ["RNN", "RNN"]
 
 params = {
         "batch_size": 100,
