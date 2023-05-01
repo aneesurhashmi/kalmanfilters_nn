@@ -5,10 +5,10 @@ DATA:
   TRAIN_DATA_DIR: ./data/2D/generated_data
 MODEL:
   HIDDEN_SIZE: 128
-  # INPUT_SIZE: 19
+  INPUT_SIZE: 19
   # TYPE: SimpleRNN
-  INPUT_SIZE: 18 # no alpha value
-  TYPE:  RNN # RNN or LSTM
+  # INPUT_SIZE: 18 # no alpha value
+  TYPE:  LSTM # RNN or LSTM
   NUM_LAYERS: 2
   OUTPUT_SIZE: 3
   SEQUENCE_LENGTH: 28

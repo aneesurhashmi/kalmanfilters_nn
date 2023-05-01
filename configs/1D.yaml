@@ -1,14 +1,14 @@
 DATA:
   ENVIRONMENT: fbcampus
-  EVAL_DATA_DIR: ./data/2D/evaluation_data
+  EVAL_DATA_DIR: ./data/1D/evaluation_data
   SETTING: 1D
-  TRAIN_DATA_DIR: ./data/2D/generated_data
+  TRAIN_DATA_DIR: ./data/1D/generated_data
 
 MODEL:
   HIDDEN_SIZE: 128
   INPUT_SIZE: 9
   # TYPE: SimpleRNN
-  TYPE: RNN
+  TYPE: LSTM
   # TYPE: LSTM
   NUM_LAYERS: 2
   OUTPUT_SIZE: 1

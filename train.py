@@ -206,7 +206,8 @@ def main(cfg):
 
     # save best config as json
     os.makedirs(os.path.join(cfg.OUTPUT.OUTPUT_DIR, cfg.MODEL.TYPE), exist_ok=True)
-    with open('{}/{}/best_config_{}.json'.format(cfg.OUTPUT.OUTPUT_DIR, cfg.MODEL.TYPE, cfg.DATA.TRAIN_DATA_DIR.split('/')[-1][:-4]), 'w') as fp:
+    # with open('{}/{}/best_config_{}.json'.format(cfg.OUTPUT.OUTPUT_DIR, cfg.MODEL.TYPE, cfg.DATA.TRAIN_DATA_DIR.split('/')[-1][:-4]), 'w') as fp:
+    with open('{}/best_config_{}.json'.format(cfg.OUTPUT.OUTPUT_DIR, cfg.MODEL.TYPE), 'w') as fp:
         json.dump(best_trial.config, fp, sort_keys=True, indent=4)
         # json.dump(best_trial.metrics, fp, sort_keys=True, indent=4)
         # json.dump({'dir':str(best_trial.log_dir)}, fp, sort_keys=True, indent=4)

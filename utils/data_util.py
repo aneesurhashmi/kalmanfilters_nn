@@ -44,7 +44,7 @@ def get_input_data(seq_len, batch_size, csv_name = None,datadir=DATA_DIR):
             'noisy_motion_cov_yy', 'noisy_motion_cov_ytheta',
             'noisy_motion_cov_thetatheta', 'lidar_x', 'lidar_y', 'lidar_theta',
             'lidar_cov_xx', 'lidar_cov_xy', 'lidar_cov_xtheta', 'lidar_cov_yy',
-            'lidar_cov_ytheta', 'lidar_cov_thetatheta']
+            'lidar_cov_ytheta', 'lidar_cov_thetatheta', 'alpha']
     ].to_numpy()
 
     # input_data = input_data_df[:num_batches * batch_size]
