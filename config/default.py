@@ -29,4 +29,4 @@ _C.DATA.ENVIRONMENT = 'fbcampus'
 # Output default values
 _C.OUTPUT = CN()
 _C.OUTPUT.OUTPUT_DIR = "./output"
-_C.OUTPUT.PLOT = True
+_C.OUTPUT.PLOT = False

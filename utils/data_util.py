@@ -200,6 +200,12 @@ def plot_data(data):
         plt.title(key)
         plt.show()
 
+def append(l1,l2):
+    appended_l = []
+    for i,v in zip(l1,l2):
+        appended_l.append(np.concatenate((i,v), axis=0))
+    return appended_l
+
 if __name__ == '__main__':
 
     datadir = './data/2D/generated_data' 

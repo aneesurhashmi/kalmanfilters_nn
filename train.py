@@ -7,7 +7,7 @@ from ray.tune.schedulers import ASHAScheduler
 from ray.tune import CLIReporter
 import ray
 from ray import tune, air
-from utils import train_test_split, get_dataloader, get_input_data, plot_data, get_input_data_1D
+from utils import train_test_split, get_dataloader, get_input_data, plot_data, get_input_data_1D, append
 import numpy as np
 import json
 import random
@@ -32,14 +32,27 @@ def train_ray(config,cfg):
     # else:
     #     raise ValueError("Environment not supported")
     print("current working directory: {}".format(os.getcwd()))
+    appended_l = []
     if cfg.DATA.SETTING == '2D':
-        X =  get_input_data(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=cfg.DATA.TRAIN_DATA_DIR)
+        for i,csv_file in enumerate(os.listdir(cfg.DATA.TRAIN_DATA_DIR)):
+            if i == 0:
+                appended_l =  get_input_data(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=os.path.join(cfg.DATA.TRAIN_DATA_DIR,csv_file))
+                continue
+            X =  get_input_data(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=os.path.join(cfg.DATA.TRAIN_DATA_DIR,csv_file))
+            appended_l = append(appended_l,X)
     elif cfg.DATA.SETTING == '1D':
-        X =  get_input_data_1D(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=cfg.DATA.TRAIN_DATA_DIR)
+        # X =  get_input_data_1D(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=cfg.DATA.TRAIN_DATA_DIR)
+        for i,csv_file in enumerate(os.listdir(cfg.DATA.TRAIN_DATA_DIR)):
+            if i == 0:
+                appended_l =  get_input_data_1D(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=os.path.join(cfg.DATA.TRAIN_DATA_DIR,csv_file))
+                continue
+            X =  get_input_data_1D(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=os.path.join(cfg.DATA.TRAIN_DATA_DIR,csv_file))
+            appended_l = append(appended_l,X)
     else:
         raise ValueError("Environment not supported")
     
-    train_data, valid_data = train_test_split(X, test_size=0.2)
+    train_data, valid_data = train_test_split(appended_l, test_size=0.2)
+
     train_loader = get_dataloader(train_data[0],train_data[1], batch_size=cfg.SOLVER.BATCH_SIZE)
     valid_loader = get_dataloader(valid_data[0],valid_data[1], batch_size=cfg.SOLVER.BATCH_SIZE)
 
