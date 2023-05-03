@@ -27,7 +27,8 @@ def get_input_data(seq_len, batch_size, csv_name = None,datadir=DATA_DIR):
     # print("Loading data from {}".format(os.path.join(datadir, f'{CSV_NAME}')))
 
     # df = pd.read_csv(os.path.join(datadir, f'{CSV_NAME}'))
-    df = pd.read_csv(datadir)
+    df = pd.read_csv(datadir).dropna()
+    # df.isna().sum()
 
     num_batches = (len(df) - seq_len) // (batch_size)
 
@@ -209,9 +210,18 @@ def append(l1,l2):
 if __name__ == '__main__':
 
     datadir = './data/2D/generated_data' 
-    CSV_NAME = os.listdir(datadir)[1]
-    print("Loading data from {}".format(os.path.join(datadir, f'{CSV_NAME}')))
+    # CSV_NAME = os.listdir(datadir)[1]
+    # print("Loading data from {}".format(os.path.join(datadir, f'{CSV_NAME}')))
 
-    X,y, y_kalman = get_input_data(10, 32, datadir=os.path.join(datadir, f'{CSV_NAME}'))
+    # X,y, y_kalman = get_input_data(10, 32, datadir=os.path.join(datadir, f'{CSV_NAME}'))
 
-    print(X.shape)
+    # print(X.shape)
+    appended_l = []
+    for i,csv_file in enumerate(os.listdir(datadir)):
+        if i == 0:
+            appended_l =  get_input_data(seq_len = 10, batch_size = 100, datadir=os.path.join(datadir,csv_file))
+            continue
+        X =  get_input_data(seq_len = 10, batch_size = 100, datadir=os.path.join(datadir,csv_file))
+        appended_l = append(appended_l,X)
+        if len([i.shape for i in appended_l if np.isnan(i).any()]):
+            print([i.shape for i in appended_l if np.isnan(i).any()])

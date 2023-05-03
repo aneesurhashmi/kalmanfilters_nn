@@ -18,13 +18,12 @@
 #     OUTPUT.OUTPUT_DIR './logs/experiments_2D/'
 # done
 
-
-# 1D case
-echo "Running experiment on 1D data"
-python train.py --config_file './configs/1D.yaml' \
-OUTPUT.OUTPUT_DIR './logs/experiments_1D/'
-
 # 2D case
 echo "Running experiment on 2D data"
 python train.py --config_file './configs/2D.yaml' \
 OUTPUT.OUTPUT_DIR './logs/experiments_2D/'
+
+# # 1D case
+# echo "Running experiment on 1D data"
+# python train.py --config_file './configs/1D.yaml' \
+# OUTPUT.OUTPUT_DIR './logs/experiments_1D/'
