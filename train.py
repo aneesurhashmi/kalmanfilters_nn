@@ -155,8 +155,8 @@ def main(cfg):
     config = {
         "hidden_size": tune.sample_from(lambda _: 2 ** np.random.randint(2, 9)),
         "lr": tune.loguniform(1e-4, 1e-1),
-        "num_layers": tune.choice([1, 2, 3]),
-        'sequence_length': tune.choice([28, 56, 112]),
+        "num_layers": tune.choice([2, 3, 4, 5, 6]),
+        'sequence_length': tune.choice([14, 28, 56, 78, 100]),
     }
 
     # fixed parameters
