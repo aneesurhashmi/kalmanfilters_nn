@@ -28,6 +28,7 @@ def get_input_data(seq_len, batch_size, csv_name = None,datadir=DATA_DIR):
 
     # df = pd.read_csv(os.path.join(datadir, f'{CSV_NAME}'))
     df = pd.read_csv(datadir).dropna()
+    df = (df-df.min())/(df.max()-df.min() + 1e-10)
     # df.isna().sum()
 
     num_batches = (len(df) - seq_len) // (batch_size)
@@ -36,8 +37,13 @@ def get_input_data(seq_len, batch_size, csv_name = None,datadir=DATA_DIR):
     kalman_pred = df[["kalman_prediction_x", "kalman_prediction_y", "kalman_prediction_theta"]].to_numpy() # used for comparison
 
     if 'ekf_pos_x' in df.columns:
+        # df['ekf_pos_theta'] = df['ekf_pos_theta'].apply(lambda x: x*180/np.pi)
         ekf_pred = df[["ekf_pos_x", "ekf_pos_y", "ekf_pos_theta"]].to_numpy() # used for comparison
         ukf_pred = df[["ukf_pos_x", "ukf_pos_y", "ukf_pos_theta"]].to_numpy() # used for comparison
+
+
+    # df['ukf_pos_theta'] = df['ukf_pos_theta'].apply(lambda x: x*180/np.pi)
+    # df['noisy_motion_theta'] = df['noisy_motion_theta'].apply(lambda x: x*180/np.pi)
 
     input_data_df = df[
             ['noisy_motion_x', 'noisy_motion_y', 'noisy_motion_theta',

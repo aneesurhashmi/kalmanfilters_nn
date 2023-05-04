@@ -3,6 +3,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 # from torch.autograd import Variable
+from torch.autograd import Variable
+from torch import Tensor
 
 
 class LSTM(nn.Module):
@@ -20,3 +22,13 @@ class LSTM(nn.Module):
         out, _ = self.lstm(x, (h0, c0))
         fc_out = self.fc(out[:, -1, :])
         return fc_out, out
+    
+if __name__ == '__main__':
+    model = nn.LSTM(50, 100, 2, batch_first=True)
+    # x = Variable(Tensor(50, 32, 50)) # seq_len, batch, input_size
+    x = Variable(Tensor(32, 50, 50)) # batch, seq_len, input_size
+    #h = model.init_hidden(32)
+    h = (Variable(Tensor(2*2, 32, 100)),
+         Variable(Tensor(2*2, 32, 100)))
+    print(model(x, h))
+    print("")

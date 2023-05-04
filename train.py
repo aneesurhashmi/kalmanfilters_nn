@@ -13,6 +13,7 @@ import json
 import random
 import argparse
 from config import cfg
+from tqdm import tqdm
 
 random.seed(0)
 torch.manual_seed(0)
@@ -22,15 +23,7 @@ def train_ray(config,cfg):
     device="cpu"
     if torch.cuda.is_available():
         device = "cuda:0"
-    
-    # # setup data
-    # print("current working directory: {}".format(os.getcwd()))
-    # if cfg.DATA.SETTING == '2D':
-    #     X, y, _ =  get_input_data(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=cfg.DATA.TRAIN_DATA_DIR)
-    # elif cfg.DATA.SETTING == '1D':
-    #     X, y, _ =  get_input_data_1D(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=cfg.DATA.TRAIN_DATA_DIR)
-    # else:
-    #     raise ValueError("Environment not supported")
+        
     print("current working directory: {}".format(os.getcwd()))
     appended_l = []
     if cfg.DATA.SETTING == '2D':
@@ -143,36 +136,15 @@ def test_accuracy(net, test_loader, device="cpu"):
 
 def main(cfg):
 
-    # hyperparameter
-    # num_epochs = 10
-    # batch_size = 100
     gpus_per_trial = cfg.SOLVER.GPUS_PER_TRIAL
-
-    # TRAIN_DATA_DIR = os.path.abspath("./data/2D/generated_data") 
-    # EVAL_DATA_DIR = os.path.abspath('./data/2D/evaluation_data')  
 
     # configurable parameters
     config = {
-        "hidden_size": tune.sample_from(lambda _: 2 ** np.random.randint(2, 10)),
+        "hidden_size": tune.sample_from(lambda _: 2 ** np.random.randint(2, 9)),
         "lr": tune.loguniform(1e-4, 1e-1),
-        "num_layers": tune.choice([4, 12, 32, 64, 128]),
-        'sequence_length': tune.choice([14, 28, 56, 78, 100]),
+        "num_layers": tune.choice([4, 12, 32, 64]),
+        'sequence_length': tune.choice([14, 28, 38, 56]),
     }
-
-    # fixed parameters
-    # params = {
-    #     "batch_size": batch_size,
-    #     "model_name": "SimpleRNN",
-    #     "input_size": 19,
-    #     "output_size": 3,
-    #     "num_epochs": num_epochs,
-    #     "log_step": 500,
-    #     'TRAIN_DATA_DIR': TRAIN_DATA_DIR,
-    #     'setting': '2D',
-    #     'EVAL_DATA_DIR': EVAL_DATA_DIR,
-    #     'environment': 'fbcampus',
-
-    # }
 
     # setup device
     device = 'cpu'
@@ -239,6 +211,104 @@ def main(cfg):
 
     # plot_data(to_plot)
 
+def train_best_net(config,cfg):
+    device="cpu"
+    if torch.cuda.is_available():
+        device = "cuda:0"
+        
+    print("current working directory: {}".format(os.getcwd()))
+    appended_l = []
+    if cfg.DATA.SETTING == '2D':
+        for i,csv_file in enumerate(os.listdir(cfg.DATA.TRAIN_DATA_DIR)):
+            if i == 0:
+                appended_l =  get_input_data(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=os.path.join(cfg.DATA.TRAIN_DATA_DIR,csv_file))
+                continue
+            X =  get_input_data(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=os.path.join(cfg.DATA.TRAIN_DATA_DIR,csv_file))
+            appended_l = append(appended_l,X)
+    elif cfg.DATA.SETTING == '1D':
+        # X =  get_input_data_1D(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=cfg.DATA.TRAIN_DATA_DIR)
+        for i,csv_file in enumerate(os.listdir(cfg.DATA.TRAIN_DATA_DIR)):
+            if i == 0:
+                appended_l =  get_input_data_1D(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=os.path.join(cfg.DATA.TRAIN_DATA_DIR,csv_file))
+                continue
+            X =  get_input_data_1D(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=os.path.join(cfg.DATA.TRAIN_DATA_DIR,csv_file))
+            appended_l = append(appended_l,X)
+    else:
+        raise ValueError("Environment not supported")
+    
+    train_data, valid_data = train_test_split(appended_l, test_size=0.2)
+
+    train_loader = get_dataloader(train_data[0],train_data[1], batch_size=cfg.SOLVER.BATCH_SIZE)
+    valid_loader = get_dataloader(valid_data[0],valid_data[1], batch_size=cfg.SOLVER.BATCH_SIZE)
+
+    # setup model
+    print("Using model: {}".format(cfg.MODEL.TYPE))
+    model = Base(input_size=cfg.MODEL.INPUT_SIZE, hidden_size = config["hidden_size"], 
+                      num_layers = config["num_layers"], output_size = cfg.MODEL.OUTPUT_SIZE, model=cfg.MODEL.TYPE)
+    
+    if torch.cuda.device_count() > 1:
+        model = nn.DataParallel(model)
+    model.to(device)
+
+    # criterion = nn.MSELoss()
+    criterion = nn.L1Loss()
+    optimizer = optim.Adam(model.parameters(), lr=config["lr"])
+
+    best_val_loss = np.inf
+    for epoch in tqdm(range(cfg.SOLVER.NUM_EPOCHS)):
+
+        running_loss = 0.0
+        # epoch_steps = 0
+        for i, data in enumerate(train_loader, 0):
+            # get the inputs; data is a list of [inputs, labels]
+            inputs, labels = data
+            inputs, labels = inputs.to(device), labels.to(device)
+
+            # zero the parameter gradients
+            optimizer.zero_grad()
+
+            # forward + backward + optimize
+            outputs, hidden = model(inputs)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
+
+            # print statistics
+            # running_loss += loss.item()
+            # epoch_steps += 1
+            # if i % cfg.SOLVER.LOG_STEP == 0:  # print every 2000 mini-batches
+            #     print("[%d, %5d] loss: %.3f" % (epoch + 1, i + 1,
+            #                                     running_loss / epoch_steps))
+            # running_loss = 0.0
+        # print("Training loss: {}".format(loss.cpu().numpy()))
+        # Validation loss
+        val_loss = 0.0
+        val_steps = 0
+        total = 0
+        correct = 0
+        for i, data in enumerate(valid_loader, 0):
+            with torch.no_grad():
+                inputs, labels = data
+                inputs, labels = inputs.to(device), labels.to(device)
+
+                outputs, _ = model(inputs)
+                # _, predicted = torch.max(outputs.data, 1)
+                total += labels.size(0)
+                # correct += (predicted == labels).sum().item()
+
+                loss = criterion(outputs, labels)
+                val_loss += loss.cpu().numpy()
+                val_steps += 1
+        
+        val_loss /= len(valid_loader)
+
+        # with tune.checkpoint_dir(epoch) as checkpoint_dir:
+            # path = os.path.join(checkpoint_dir, "checkpoint")
+            # torch.save((model.state_dict(), optimizer.state_dict()), path)
+        if val_loss < best_val_loss:
+            best_val_loss = val_loss
+            torch.save(model.state_dict(), os.path.join(cfg.OUTPUT.OUTPUT_DIR, "model_{}_{}.pth".format(epoch, val_loss)))
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Neural networks for robot state estimation")
     parser.add_argument(
@@ -265,4 +335,14 @@ if __name__ == "__main__":
     if output_dir and not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    main(cfg)
+    # main(cfg)
+    best_cfg = {
+        "dir": "/home/anees.hashmi/ray_results/train_ray_2023-05-04_14-46-28/train_ray_f11dc_00011_11_lr=0.0002,num_layers=4,sequence_length=28_2023-05-04_16-20-25",
+        "hidden_size": 64,
+        "lr": 0.0002337221208072454,
+        "metric": 15.028940420884352,
+        "num_layers": 4,
+        "sequence_length": 28
+    }
+    train_best_net(best_cfg, cfg)
+    # main(cfg, best_cfg)

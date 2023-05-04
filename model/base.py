@@ -1,10 +1,11 @@
 from torch import nn
 import torch
-from model import RNN , LSTM
+from model import RNN , LSTM, LSTMLayerNorm
 
 _models = {
     "RNN": RNN,
-    "LSTM": LSTM
+    "LSTM": LSTM,
+    "LSTM_ln": LSTMLayerNorm
 }
 
 class Base(nn.Module):
@@ -13,7 +14,10 @@ class Base(nn.Module):
         self.hidden_size = hidden_size
         self.num_layers = num_layers
         self.model = model
-        self._base = _models[model](input_size, hidden_size, num_layers, output_size, *args)
+        self._base = _models[model](input_size = input_size, 
+                                    hidden_size = hidden_size, 
+                                    num_layers = num_layers, 
+                                    output_size = output_size, *args)
 
     def forward(self, x):
         return self._base(x)
