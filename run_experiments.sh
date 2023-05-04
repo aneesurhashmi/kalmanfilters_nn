@@ -20,8 +20,7 @@
 
 # 2D case
 echo "Running experiment on 2D data"
-python train.py --config_file './configs/2D.yaml' \
-OUTPUT.OUTPUT_DIR './logs/experiments_2D/'
+python train.py --config_file './configs/2D.yaml' OUTPUT.OUTPUT_DIR './logs/experiments_2D/' MODEL.TYPE 'LSTM'
 
 # # 1D case
 # echo "Running experiment on 1D data"

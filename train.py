@@ -153,9 +153,9 @@ def main(cfg):
 
     # configurable parameters
     config = {
-        "hidden_size": tune.sample_from(lambda _: 2 ** np.random.randint(2, 9)),
+        "hidden_size": tune.sample_from(lambda _: 2 ** np.random.randint(2, 10)),
         "lr": tune.loguniform(1e-4, 1e-1),
-        "num_layers": tune.choice([2, 3, 4, 5, 6]),
+        "num_layers": tune.choice([4, 12, 32, 64, 128]),
         'sequence_length': tune.choice([14, 28, 56, 78, 100]),
     }
 
