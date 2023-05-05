@@ -33,7 +33,10 @@ class LSTMLayerNorm(nn.Module):
                             bidirectional=bidirectional,
                             batch_first=batch_first,
                             cln=cln)
-        self.fc = nn.Linear(hidden_size, output_size)
+        self.fc = nn.Sequential(
+            nn.Linear(hidden_size, output_size*4),
+            nn.Linear(output_size*4, output_size),
+        )
     
     def forward(self, x):
         h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(x.device)

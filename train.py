@@ -251,7 +251,7 @@ def train_best_net(config,cfg):
     model.to(device)
 
     # criterion = nn.MSELoss()
-    criterion = nn.L1Loss()
+    criterion = nn.L1Loss(reduction="sum")
     optimizer = optim.Adam(model.parameters(), lr=config["lr"])
 
     best_val_loss = np.inf
@@ -300,7 +300,7 @@ def train_best_net(config,cfg):
                 val_loss += loss.cpu().numpy()
                 val_steps += 1
         
-        val_loss /= len(valid_loader)
+        # val_loss /= len(valid_loader)
 
         # with tune.checkpoint_dir(epoch) as checkpoint_dir:
             # path = os.path.join(checkpoint_dir, "checkpoint")
@@ -345,4 +345,4 @@ if __name__ == "__main__":
         "sequence_length": 28
     }
     train_best_net(best_cfg, cfg)
-    # main(cfg, best_cfg)
+    # main(cfg)
