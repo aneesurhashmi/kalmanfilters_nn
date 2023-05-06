@@ -51,8 +51,12 @@ def train_ray(config,cfg):
 
     # setup model
     print("Using model: {}".format(cfg.MODEL.TYPE))
-    model = Base(input_size=cfg.MODEL.INPUT_SIZE, hidden_size = config["hidden_size"], 
-                      num_layers = config["num_layers"], output_size = cfg.MODEL.OUTPUT_SIZE, model=cfg.MODEL.TYPE)
+    model = Base(input_size=cfg.MODEL.INPUT_SIZE, 
+                 hidden_size = config["hidden_size"],
+                 num_layers = config["num_layers"], 
+                 output_size = cfg.MODEL.OUTPUT_SIZE, 
+                 model=cfg.MODEL.TYPE,
+                 dropout = cfg.MODEL.DROPOUT)
     
     if torch.cuda.device_count() > 1:
         model = nn.DataParallel(model)
@@ -344,5 +348,5 @@ if __name__ == "__main__":
         "num_layers": 4,
         "sequence_length": 28
     }
-    train_best_net(best_cfg, cfg)
-    # main(cfg)
+    # train_best_net(best_cfg, cfg)
+    main(cfg)
