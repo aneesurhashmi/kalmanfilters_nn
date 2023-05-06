@@ -334,15 +334,23 @@ if __name__ == "__main__":
     output_dir = cfg.OUTPUT.OUTPUT_DIR
     if output_dir and not os.path.exists(output_dir):
         os.makedirs(output_dir)
+    # main(cfg)
+    # best_cfg = {
+    #     "dir": "/home/anees.hashmi/ray_results/train_ray_2023-05-04_14-46-28/train_ray_f11dc_00011_11_lr=0.0002,num_layers=4,sequence_length=28_2023-05-04_16-20-25",
+    #     "hidden_size": 64,
+    #     "lr": 0.0002337221208072454,
+    #     "metric": 15.028940420884352,
+    #     "num_layers": 4,
+    #     "sequence_length": 28
+    # }
 
-    # main(cfg)
     best_cfg = {
-        "dir": "/home/anees.hashmi/ray_results/train_ray_2023-05-04_14-46-28/train_ray_f11dc_00011_11_lr=0.0002,num_layers=4,sequence_length=28_2023-05-04_16-20-25",
-        "hidden_size": 64,
-        "lr": 0.0002337221208072454,
-        "metric": 15.028940420884352,
-        "num_layers": 4,
-        "sequence_length": 28
+    "dir": "/home/anees.hashmi/ray_results/train_ray_2023-05-02_01-48-00/train_ray_da207_00004_4_lr=0.0018,num_layers=2,sequence_length=56_2023-05-02_01-50-28",
+    "hidden_size": 32,
+    "lr": 0.0017556246933097342,
+    "metric": 1.5923599917441607,
+    "num_layers": 2,
+    "sequence_length": 56
     }
-    train_best_net(best_cfg, cfg)
-    # main(cfg)
+    # train_best_net(best_cfg, cfg)
+    main(cfg)

@@ -11,20 +11,10 @@ class RNN(nn.Module):
         self.rnn = nn.RNN(input_size, hidden_size, num_layers, batch_first=True)
         self.fc = nn.Linear(hidden_size, output_size)
     
-    # def forward(self, x, h0):
     def forward(self, x):
-        # h0 from the last batch
-
-        # print(x.shape)
         h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(x.device)
-        # print(h0.shape, torch.zeros(1, x.size(0), self.hidden_size).to(x.device).shape)
         out, _ = self.rnn(x, h0)
-        if out.isnan().any():
-            print("NAN:", out)
         fc_out = self.fc(out[:, -1, :]) # taking only the last hidden layer output
-        # print(fc_out.shape, out.shape)
-        if out.isnan().any():
-            print("NAN: Second: ", out)
         return fc_out, out
     
 
