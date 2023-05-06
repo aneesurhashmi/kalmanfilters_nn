@@ -26,6 +26,7 @@ _C.DATA.TRAIN_DATA_DIR = "./data/2D/generated_data"
 _C.DATA.EVAL_DATA_DIR = "./data/2D/evaluation_data"
 _C.DATA.SETTING = '2D'
 _C.DATA.ENVIRONMENT = 'fbcampus'
+_C.DATA.SETUP = 'appended'
 
 # Output default values
 _C.OUTPUT = CN()

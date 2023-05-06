@@ -3,12 +3,13 @@ DATA:
   EVAL_DATA_DIR: ./data/1D/evaluation_data
   SETTING: 1D
   TRAIN_DATA_DIR: ./data/1D/generated_data
+  SETUP: separated # appended or separated
 
 MODEL:
   HIDDEN_SIZE: 128
   INPUT_SIZE: 9
   # TYPE: SimpleRNN
-  TYPE: LSTM_ln 
+  TYPE: RNN 
   # TYPE: LSTM
   NUM_LAYERS: 2
   OUTPUT_SIZE: 1
