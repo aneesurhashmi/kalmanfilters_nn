@@ -8,7 +8,7 @@ from torch import Tensor
 
 
 class LSTM(nn.Module):
-    def __init__(self, input_size, hidden_size, num_layers,  output_size, dropout = 0.1):
+    def __init__(self, input_size, hidden_size, num_layers,  output_size, dropout = 0.2):
         super(LSTM, self).__init__()
         self.hidden_size = hidden_size
         self.num_layers = num_layers

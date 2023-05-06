@@ -18,13 +18,7 @@ from tqdm import tqdm
 random.seed(0)
 torch.manual_seed(0)
 
-def train_ray(config,cfg):
-
-    device="cpu"
-    if torch.cuda.is_available():
-        device = "cuda:0"
-        
-    print("current working directory: {}".format(os.getcwd()))
+def get_data_appended(cfg, config):
     appended_l = []
     if cfg.DATA.SETTING == '2D':
         for i,csv_file in enumerate(os.listdir(cfg.DATA.TRAIN_DATA_DIR)):
@@ -43,6 +37,52 @@ def train_ray(config,cfg):
             appended_l = append(appended_l,X)
     else:
         raise ValueError("Environment not supported")
+    return appended_l
+
+def get_data_separate(cfg, config):
+
+    if cfg.DATA.SETTING == '2D':
+        X =  get_input_data(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=cfg.DATA.TRAIN_DATA_DIR)
+    elif cfg.DATA.SETTING == '1D':
+        X =  get_input_data_1D(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=cfg.DATA.TRAIN_DATA_DIR)
+    else:
+        raise ValueError("Environment not supported")
+    return X
+
+def train_ray(config,cfg):
+
+    device="cpu"
+    if torch.cuda.is_available():
+        device = "cuda:0"
+        
+    print("current working directory: {}".format(os.getcwd()))
+    # appended_l = []
+    # if cfg.DATA.SETTING == '2D':
+    #     for i,csv_file in enumerate(os.listdir(cfg.DATA.TRAIN_DATA_DIR)):
+    #         if i == 0:
+    #             appended_l =  get_input_data(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=os.path.join(cfg.DATA.TRAIN_DATA_DIR,csv_file))
+    #             continue
+    #         X =  get_input_data(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=os.path.join(cfg.DATA.TRAIN_DATA_DIR,csv_file))
+    #         appended_l = append(appended_l,X)
+    # elif cfg.DATA.SETTING == '1D':
+    #     # X =  get_input_data_1D(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=cfg.DATA.TRAIN_DATA_DIR)
+    #     for i,csv_file in enumerate(os.listdir(cfg.DATA.TRAIN_DATA_DIR)):
+    #         if i == 0:
+    #             appended_l =  get_input_data_1D(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=os.path.join(cfg.DATA.TRAIN_DATA_DIR,csv_file))
+    #             continue
+    #         X =  get_input_data_1D(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=os.path.join(cfg.DATA.TRAIN_DATA_DIR,csv_file))
+    #         appended_l = append(appended_l,X)
+    # else:
+    #     raise ValueError("Environment not supported")
+
+    if cfg.DATA.SETUP == 'appended':
+        appended_l = get_data_appended(cfg, config)
+    elif cfg.DATA.SETUP == 'separated':
+        appended_l = get_data_separate(cfg, config)
+    else:
+        raise ValueError("Setup not supported")
+
+    
     
     train_data, valid_data = train_test_split(appended_l, test_size=0.2)
 
@@ -51,8 +91,12 @@ def train_ray(config,cfg):
 
     # setup model
     print("Using model: {}".format(cfg.MODEL.TYPE))
-    model = Base(input_size=cfg.MODEL.INPUT_SIZE, hidden_size = config["hidden_size"], 
-                      num_layers = config["num_layers"], output_size = cfg.MODEL.OUTPUT_SIZE, model=cfg.MODEL.TYPE)
+    model = Base(input_size=cfg.MODEL.INPUT_SIZE, 
+                 hidden_size = config["hidden_size"],
+                 num_layers = config["num_layers"], 
+                 output_size = cfg.MODEL.OUTPUT_SIZE, 
+                 model=cfg.MODEL.TYPE,
+                 dropout = cfg.MODEL.DROPOUT)
     
     if torch.cuda.device_count() > 1:
         model = nn.DataParallel(model)
@@ -177,9 +221,17 @@ def main(cfg):
     best_trial.config["metric"] = best_trial.metrics["loss"]
 
     # save best config as json
-    os.makedirs(os.path.join(cfg.OUTPUT.OUTPUT_DIR, cfg.MODEL.TYPE), exist_ok=True)
+    
     # with open('{}/{}/best_config_{}.json'.format(cfg.OUTPUT.OUTPUT_DIR, cfg.MODEL.TYPE, cfg.DATA.TRAIN_DATA_DIR.split('/')[-1][:-4]), 'w') as fp:
-    with open('{}/best_config_{}.json'.format(cfg.OUTPUT.OUTPUT_DIR, cfg.MODEL.TYPE), 'w') as fp:
+    if cfg.DATA.SETUP == 'appended':
+        output_path = cfg.OUTPUT.OUTPUT_DIR
+    else:
+        output_path = os.path.join(cfg.OUTPUT.OUTPUT_DIR, cfg.DATA.TRAIN_DATA_DIR.split('/')[-1][:-4])
+
+    os.makedirs(output_path, exist_ok=True)
+
+    # os.makedirs(os.path.join(cfg.OUTPUT.OUTPUT_DIR, cfg.MODEL.TYPE), exist_ok=True)
+    with open('{}/best_config_{}.json'.format(output_path, cfg.MODEL.TYPE), 'w') as fp:
         json.dump(best_trial.config, fp, sort_keys=True, indent=4)
         # json.dump(best_trial.metrics, fp, sort_keys=True, indent=4)
         # json.dump({'dir':str(best_trial.log_dir)}, fp, sort_keys=True, indent=4)
