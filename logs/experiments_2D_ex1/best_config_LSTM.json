@@ -1,0 +1,8 @@
+{
+    "dir": "/home/anees.hashmi/ray_results/train_ray_2023-05-03_22-50-55/train_ray_725d5_00010_10_lr=0.0002,num_layers=2,sequence_length=28_2023-05-03_23-04-58",
+    "hidden_size": 256,
+    "lr": 0.0001765685369984852,
+    "metric": 34.38044826801006,
+    "num_layers": 2,
+    "sequence_length": 28
+}

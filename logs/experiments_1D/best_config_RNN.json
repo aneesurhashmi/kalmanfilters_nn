@@ -1,0 +1,10 @@
+{
+    "dir": "/home/anees.hashmi/Desktop/kalmanfilters_nn/logs/experiments_1D/RNN/models/model_188_1002.3156089782715.pth",
+    "hidden_size": 32,
+    "lr": 0.0017556246933097342,
+    "metric": 1.5923599917441607,
+    "num_layers": 2,
+    "sequence_length": 56
+}
+
+

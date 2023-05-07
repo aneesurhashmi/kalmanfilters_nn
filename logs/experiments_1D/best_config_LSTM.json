@@ -1,0 +1,8 @@
+{
+    "dir": "/home/anees.hashmi/Desktop/kalmanfilters_nn/logs/experiments_1D/LSTM/models/model_192_659.8709335327148.pth",
+    "hidden_size": 128,
+    "lr": 0.00026758849427245394,
+    "metric": 1.285963558975388,
+    "num_layers": 2,
+    "sequence_length": 28
+}

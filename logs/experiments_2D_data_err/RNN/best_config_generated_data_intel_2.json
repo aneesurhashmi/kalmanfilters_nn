@@ -1,0 +1,8 @@
+{
+    "dir": "/home/anees.hashmi/ray_results/train_ray_2023-04-30_06-36-19/train_ray_ccbce_00006_6_lr=0.0040,num_layers=2,sequence_length=28_2023-04-30_06-37-39",
+    "hidden_size": 64,
+    "lr": 0.004014227846594756,
+    "metric": 0.12069120151656014,
+    "num_layers": 2,
+    "sequence_length": 28
+}

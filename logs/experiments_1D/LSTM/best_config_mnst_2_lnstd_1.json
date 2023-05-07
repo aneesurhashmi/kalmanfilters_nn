@@ -1,0 +1,8 @@
+{
+    "dir": "/home/anees.hashmi/ray_results/train_ray_2023-04-30_04-53-43/train_ray_773d7_00017_17_lr=0.0011,num_layers=2,sequence_length=28_2023-04-30_04-54-46",
+    "hidden_size": 256,
+    "lr": 0.0011352397008930078,
+    "metric": 0.08323989063501358,
+    "num_layers": 2,
+    "sequence_length": 28
+}
