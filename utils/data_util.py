@@ -148,7 +148,7 @@ def get_input_data_1D(seq_len, batch_size, datadir=DATA_DIR):
     new_output_data = np.array(new_output_data[:num_batches* batch_size]) # drop the last batch
     new_kp_data = np.array(new_kp_data[:num_batches* batch_size]) # drop the last batch
 
-    if 'ekf_pos_x' in df.columns:
+    if 'ekf_pos' in df.columns:
         new_ekf_data = np.array(new_ekf_data[:num_batches* batch_size]) # drop the last batch
         new_ukf_data = np.array(new_ukf_data[:num_batches* batch_size]) # drop the last batch
 
