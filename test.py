@@ -151,19 +151,18 @@ def main(cfg):
         # get model
         model, path = get_model(cfg, v)
        
-        print(path)
-        if cfg.DATA.SETTING == '2D':
-            new_path = os.path.join('output', '{}_{}_{}_{}.pth'.format(cfg.DATA.SETTING,i.split('/')[0][15:], cfg.MODEL.TYPE, cfg.DATA.SETUP))
-            v['dir'] = new_path
-            shutil.copy(path, new_path )
-            with open('{}/best_config_{}.json'.format('output', '{}_{}_{}_{}'.format(cfg.DATA.SETTING,i.split('/')[0][15:], cfg.MODEL.TYPE, cfg.DATA.SETUP)), 'w') as fp:
-                json.dump(v, fp, sort_keys=True, indent=4)
-        else:
-            new_path = os.path.join('output', '{}_{}_{}_{}.pth'.format(cfg.DATA.SETTING,i.split('/')[0], cfg.MODEL.TYPE, cfg.DATA.SETUP))
-            v['dir'] = new_path
-            shutil.copy(path, new_path)
-            with open('{}/best_config_{}.json'.format('output', '{}_{}_{}_{}'.format(cfg.DATA.SETTING, i.split('/')[0], cfg.MODEL.TYPE, cfg.DATA.SETUP)), 'w') as fp:
-                json.dump(v, fp, sort_keys=True, indent=4)
+        # if cfg.DATA.SETTING == '2D':
+        #     new_path = os.path.join('output', '{}_{}_{}_{}.pth'.format(cfg.DATA.SETTING,i.split('/')[0][15:], cfg.MODEL.TYPE, cfg.DATA.SETUP))
+        #     v['dir'] = new_path
+        #     shutil.copy(path, new_path )
+        #     with open('{}/best_config_{}.json'.format('output', '{}_{}_{}_{}'.format(cfg.DATA.SETTING,i.split('/')[0][15:], cfg.MODEL.TYPE, cfg.DATA.SETUP)), 'w') as fp:
+        #         json.dump(v, fp, sort_keys=True, indent=4)
+        # else:
+        #     new_path = os.path.join('output', '{}_{}_{}_{}.pth'.format(cfg.DATA.SETTING,i.split('/')[0], cfg.MODEL.TYPE, cfg.DATA.SETUP))
+        #     v['dir'] = new_path
+        #     shutil.copy(path, new_path)
+        #     with open('{}/best_config_{}.json'.format('output', '{}_{}_{}_{}'.format(cfg.DATA.SETTING, i.split('/')[0], cfg.MODEL.TYPE, cfg.DATA.SETUP)), 'w') as fp:
+        #         json.dump(v, fp, sort_keys=True, indent=4)
         
         # inference
         loss, test_pred = test_accuracy(model, test_data_loader, device=device)
