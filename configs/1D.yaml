@@ -3,7 +3,7 @@ DATA:
   EVAL_DATA_DIR: ./data/1D/evaluation_data
   SETTING: 1D
   TRAIN_DATA_DIR: ./data/1D/generated_data
-  SETUP: separated # appended or separated
+  SETUP: appended # appended or separated
 
 MODEL:
   HIDDEN_SIZE: 128
@@ -16,12 +16,12 @@ MODEL:
   SEQUENCE_LENGTH: 28
 
 OUTPUT:
-  OUTPUT_DIR: ./output
+  OUTPUT_DIR: ./logs/separate/experiments_1D
   PLOT: True
 
 SOLVER:
   BATCH_SIZE: 100
-  LOG_STEP: 2000
+  LOG_STEP: 20
   LR: 0.001
   NUM_EPOCHS: 200
   GPUS_PER_TRIAL: 1

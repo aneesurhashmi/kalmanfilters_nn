@@ -102,7 +102,7 @@ def train_ray(config,cfg):
         model = nn.DataParallel(model)
     model.to(device)
 
-    criterion = nn.MSELoss()
+    criterion = nn.L1Loss()
     optimizer = optim.Adam(model.parameters(), lr=config["lr"])
 
     for epoch in range(cfg.SOLVER.NUM_EPOCHS):
@@ -163,7 +163,7 @@ def train_ray(config,cfg):
 def test_accuracy(net, test_loader, device="cpu"):
     
     net.to(device)
-    criterion = nn.MSELoss()
+    criterion = nn.L1Loss()
     loss = 0
     total = 0
     test_pred = []

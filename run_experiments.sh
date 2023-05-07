@@ -19,14 +19,17 @@
 # done
 
 # 2D case
-echo "Running experiment on 1D data"
-python train.py --config_file './configs/1D.yaml' \
-OUTPUT.OUTPUT_DIR './logs/experiments_1D/' MODEL.TYPE 'GRU'
-
-# # 1D case
 # echo "Running experiment on 1D data"
 # python train.py --config_file './configs/1D.yaml' \
-# OUTPUT.OUTPUT_DIR './logs/experiments_1D/'
+# OUTPUT.OUTPUT_DIR './logs/experiments_1D/' MODEL.TYPE 'GRU'
+
+for model in 'RNN' 'LSTM' 'LSTM_ln' 'GRU'
+do
+    # 1D case
+    echo "Running experiment on 1D data"
+    python train.py --config_file './configs/1D.yaml' \
+    OUTPUT.OUTPUT_DIR './logs/appended_mae/experiments_1D/' MODEL.TYPE $model DATA.SETUP 'appended'
+done
 
 
 # experiment_2D_ex3:
