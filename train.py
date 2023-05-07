@@ -149,10 +149,11 @@ def train_ray(config,cfg):
                 loss = criterion(outputs, labels)
                 val_loss += loss.cpu().numpy()
                 val_steps += 1
-        
-        with tune.checkpoint_dir(epoch) as checkpoint_dir:
-            path = os.path.join(checkpoint_dir, "checkpoint")
-            torch.save((model.state_dict(), optimizer.state_dict()), path)
+                
+        if epoch % cfg.SOLVER.LOG_STEP == 0:
+            with tune.checkpoint_dir(epoch) as checkpoint_dir:
+                path = os.path.join(checkpoint_dir, "checkpoint")
+                torch.save((model.state_dict(), optimizer.state_dict()), path)
 
         tune.report(loss=(val_loss / val_steps))
 
