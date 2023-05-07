@@ -106,7 +106,9 @@ def get_input_data_1D(seq_len, batch_size, datadir=DATA_DIR):
     # print("Loading data from {}".format(os.path.join(datadir, f'{CSV_NAME}')))
 
     # df = pd.read_csv(os.path.join(datadir, f'{CSV_NAME}'))
-    df = pd.read_csv(datadir)
+    df = pd.read_csv(datadir).dropna()
+    df = (df-df.min())/(df.max()-df.min() + 1e-10)
+
     num_batches = (len(df) - seq_len) // (batch_size)
     labels = df[["ground truth" ]].to_numpy()
     kalman_pred = df[["kalman prediction"]].to_numpy() # used for comparison
