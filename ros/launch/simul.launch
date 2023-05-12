@@ -1,0 +1,6 @@
+<launch>
+    <include file="$(find robot_localization)/launch/ekf_template.launch" />
+    <node name="generate_pose" type="generate_pose.py" pkg="ml703" />
+    <node name="rosbag" type="record" name="recorder" args="/odometry/filtered" />
+    <node name="rosbag" type="play" name="player" output="screen" args="--clock /home/Documents/ros/src/ml703/src/2023-04-10-23-54-24.bag" />
+</launch>

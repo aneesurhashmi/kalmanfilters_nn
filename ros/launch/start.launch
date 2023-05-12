@@ -1,0 +1,21 @@
+<launch>
+	<arg name="dim" default="1" />
+	<group if="$(eval dim == 1)">
+		<node name="spawn_wall" pkg="gazebo_ros" type="spawn_model"
+			args="-file $(find kalman_filter)/models/brick_box_3x1x3/model.sdf
+			-sdf
+			-x $(arg pos_x)
+			-y $(arg pos_y)
+			-z $(arg pos_z)
+			-Y $(arg yaw)
+			-model $(arg model_name)"
+			respawn="false" output="screen"/>
+		<node name="laser_odometry" pkg="ml703" type="laser_odometry.py" />
+	</group>
+	<node name="odom_tools" args="-d $(arg dim)" pkg="ml703" type="odom_tools.py" />
+	<node name="kalman_filter" args="-d $(arg dim)" pkg="ml703" type="kalman_filter.py" output="screen" />
+	<!-- Send command to move robot in a straight line at constant velocity -->
+	<!-- <node pkg="rostopic" type="rostopic" name="twist_pub" 
+        args="pub cmd_vel geometry_msgs/Twist '{linear: {x: 0.5, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0, z: 0.0}}' -r 10" /> -->
+
+</launch> 

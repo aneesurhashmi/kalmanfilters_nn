@@ -1,0 +1,6 @@
+<launch>
+  <node name="kf_plot"
+        pkg="rqt_plot"
+        type="rqt_plot"
+        args="/odom_truth /noisy_odom /turtlebot3_pose /kalman_belief" />
+</launch>
