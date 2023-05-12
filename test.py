@@ -200,8 +200,8 @@ def main(cfg):
                     results['alpha'].append( i.split('/')[0].split('_')[-1])
 
                 if cfg.DATA.SETTING == '2D':
-                    each_metric_ekf, total_metric_ekf = get_all_metric(test_data[3], test_data[1], metric='mse')
-                    each_metric_ukf, total_metric_ukf = get_all_metric(test_data[4], test_data[1], metric='mse')
+                    each_metric_ekf, total_metric_ekf = get_all_metric(test_data[3], test_data[1], metric='mae')
+                    each_metric_ukf, total_metric_ukf = get_all_metric(test_data[4], test_data[1], metric='mae')
 
                     results['environment'].append(i.split('/')[0][15:-8])
                     results['EKF_x'].append(each_metric_ekf[0])
