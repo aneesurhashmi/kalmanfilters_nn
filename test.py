@@ -21,6 +21,7 @@ def test_accuracy(net, test_loader, criterion=nn.MSELoss(), device="cpu"):
     loss = 0
     total = 0
     test_pred = []
+    net.eval()
     with torch.no_grad():
         for data in test_loader:
             input, labels = data
@@ -61,7 +62,8 @@ def get_model(cfg, config):
 
         path = os.path.join(config['dir'], last_checkpoint, 'checkpoint')
     else:
-        chkpoint_state_dict = torch.load(os.path.join(config['dir']))
+        # chkpoint_state_dict = torch.load(os.path.join(config['dir']))
+        chkpoint_state_dict, optim = torch.load(os.path.join(config['dir']))
         path = os.path.join(config['dir'])
     model.load_state_dict(chkpoint_state_dict)
 
@@ -104,8 +106,8 @@ def get_configs(cfg):
                     best_config = json.load(fp)
                 if 'LSTM_ln' in model:
                     index = f'{environemnt}/LSTM_ln'
-                    print(index)
-                    continue
+                    # print(index)
+                    # continue
                 else:
                     index = f'{environemnt}/{model.split("_")[-1][:-5]}'
                 configs[index] = best_config
@@ -153,8 +155,8 @@ def main(cfg):
             'environment': [],
             'LSTM': [],
             'RNN': [],
-            # 'GRU': [],
-            # 'LSTM_ln': [],
+            'GRU': [],
+            'LSTM_ln': [],
             'Kalman': [],   
         }
     
@@ -235,63 +237,64 @@ def main(cfg):
 
             evaluated_env.append(i.split('/')[0])
     else:
-        evaluated_env = []
-        for i,v in configs.items():
+        print('do nothing')
+        # evaluated_env = []
+        # for i,v in configs.items():
             
-            # setup model
-            cfg.MODEL.TYPE = i
-            model,path = get_model(cfg, v)
-            for environment in os.listdir(cfg.DATA.EVAL_DATA_DIR):
+        #     # setup model
+        #     cfg.MODEL.TYPE = i
+        #     model,path = get_model(cfg, v)
+        #     for environment in os.listdir(cfg.DATA.EVAL_DATA_DIR):
 
-                cfg.DATA.TRAIN_DATA_DIR = os.path.join(cfg.DATA.EVAL_DATA_DIR, environment)
-                # get data
-                test_data = get_data_separate(cfg, v)
-                test_data_loader = get_dataloader(test_data[0],test_data[1], batch_size=cfg.SOLVER.BATCH_SIZE)
+        #         cfg.DATA.TRAIN_DATA_DIR = os.path.join(cfg.DATA.EVAL_DATA_DIR, environment)
+        #         # get data
+        #         test_data = get_data_separate(cfg, v)
+        #         test_data_loader = get_dataloader(test_data[0],test_data[1], batch_size=cfg.SOLVER.BATCH_SIZE)
 
-                #infrrence
-                loss, test_pred = test_accuracy(model, test_data_loader, device=device)
+        #         #infrrence
+        #         loss, test_pred = test_accuracy(model, test_data_loader, device=device)
 
-                # get metric
-                each_metric, total_metric = get_all_metric(test_pred, test_data[1], metric='mae')
-                if environment not in evaluated_env:
-                    each_metric_kf, total_metric_kf = get_all_metric(test_data[2], test_data[1], metric='mae')
-                    if cfg.DATA.SETTING == '2D':
+        #         # get metric
+        #         each_metric, total_metric = get_all_metric(test_pred, test_data[1], metric='mae')
+        #         if environment not in evaluated_env:
+        #             each_metric_kf, total_metric_kf = get_all_metric(test_data[2], test_data[1], metric='mae')
+        #             if cfg.DATA.SETTING == '2D':
 
-                        each_metric_ekf, total_metric_ekf = get_all_metric(test_data[3], test_data[1], metric='mae')
-                        each_metric_ukf, total_metric_ukf = get_all_metric(test_data[4], test_data[1], metric='mae')
+        #                 each_metric_ekf, total_metric_ekf = get_all_metric(test_data[3], test_data[1], metric='mae')
+        #                 each_metric_ukf, total_metric_ukf = get_all_metric(test_data[4], test_data[1], metric='mae')
 
-                        results['environment'].append(environment)
-                        results['EKF_x'].append(each_metric_ekf[0])
-                        results['EKF_y'].append(each_metric_ekf[1])
-                        results['EKF_theta'].append(each_metric_ekf[2])
-                        results['EKF_total'].append(total_metric_ekf)
+        #                 results['environment'].append(environment)
+        #                 results['EKF_x'].append(each_metric_ekf[0])
+        #                 results['EKF_y'].append(each_metric_ekf[1])
+        #                 results['EKF_theta'].append(each_metric_ekf[2])
+        #                 results['EKF_total'].append(total_metric_ekf)
                         
-                        results['UKF_x'].append(each_metric_ukf[0])
-                        results['UKF_y'].append(each_metric_ukf[1])
-                        results['UKF_theta'].append(each_metric_ukf[2])
-                        results['UKF_total'].append(total_metric_ukf)
+        #                 results['UKF_x'].append(each_metric_ukf[0])
+        #                 results['UKF_y'].append(each_metric_ukf[1])
+        #                 results['UKF_theta'].append(each_metric_ukf[2])
+        #                 results['UKF_total'].append(total_metric_ukf)
 
                         
-                        results['Kalman_x'].append(each_metric_kf[0])
-                        results['Kalman_y'].append(each_metric_kf[1])
-                        results['Kalman_theta'].append(each_metric_kf[2])
-                        results['Kalman_total'].append(total_metric_kf)
-                    else:
-                        results['environment'].append(environment)
-                        results['Kalman'].append(total_metric_kf)
+        #                 results['Kalman_x'].append(each_metric_kf[0])
+        #                 results['Kalman_y'].append(each_metric_kf[1])
+        #                 results['Kalman_theta'].append(each_metric_kf[2])
+        #                 results['Kalman_total'].append(total_metric_kf)
+        #             else:
+        #                 results['environment'].append(environment)
+        #                 results['Kalman'].append(total_metric_kf)
                 
-                    evaluated_env.append(environment)
+        #             evaluated_env.append(environment)
 
-            for i in os.listdir()
+            # for i in os.listdir()
 
 
     if cfg.DATA.SETTING == '2D':
-        x_columns = ['environment','alpha','RNN_x','LSTM_x','GRU_x','Kalman_x','EKF_x','UKF_x']
-        y_columns = ['environment','alpha','RNN_y','LSTM_y','GRU_y','Kalman_y','EKF_y','UKF_y']
-        theta_columns = ['environment','alpha','RNN_theta','LSTM_theta','GRU_theta','Kalman_theta','EKF_theta','UKF_theta']
-        total_columns = ['environment','alpha','RNN_total','LSTM_total','GRU_total','Kalman_total','EKF_total','UKF_total']
+        x_columns = ['environment','alpha','RNN_x','LSTM_x','GRU_x', 'LSTM_ln_x','Kalman_x','EKF_x','UKF_x']
+        y_columns = ['environment','alpha','RNN_y','LSTM_y','GRU_y', 'LSTM_ln_y','Kalman_y','EKF_y','UKF_y']
+        theta_columns = ['environment','alpha','RNN_theta','LSTM_theta','GRU_theta', 'LSTM_ln_theta','Kalman_theta','EKF_theta','UKF_theta']
+        total_columns = ['environment','alpha','RNN_total','LSTM_total', 'GRU_total', 'LSTM_ln_total','Kalman_total','EKF_total','UKF_total']
     else:
-        total_columns = ['environment','RNN','LSTM','Kalman']
+        total_columns = ['environment','RNN','LSTM','GRU','LSTM_ln','Kalman']
   
     result_df = pd.DataFrame(results)
 
@@ -302,15 +305,21 @@ def main(cfg):
         result_df_theta = result_df[theta_columns]
         result_df_total = result_df[total_columns]
 
-        result_df_x.columns = ['Environment','Alpha','RNN','LSTM','GRU','KF','EKF','UKF']
-        result_df_y.columns = ['Environment','Alpha','RNN','LSTM','GRU','KF','EKF','UKF']
-        result_df_theta.columns = ['Environment','Alpha','RNN','LSTM','GRU','KF','EKF','UKF']
-        result_df_total.columns = ['Environment','Alpha','RNN','LSTM','GRU','KF','EKF','UKF']
+        result_df_x.columns = ['Environment','Alpha','RNN','LSTM','GRU', 'LSTM_ln', 'KF','EKF','UKF']
+        result_df_y.columns = ['Environment','Alpha','RNN','LSTM','GRU', 'LSTM_ln','KF','EKF','UKF']
+        result_df_theta.columns = ['Environment','Alpha','RNN','LSTM','GRU', 'LSTM_ln','KF','EKF','UKF']
+        result_df_total.columns = ['Environment','Alpha','RNN','LSTM','GRU', 'LSTM_ln','KF','EKF','UKF']
 
-        result_df_x = result_df_x.round(5)
-        result_df_y = result_df_y.round(5)
-        result_df_theta = result_df_theta.round(5)
-        result_df_total = result_df_total.round(5)
+        #sort result by environment
+        result_df_x = result_df_x.sort_values(by=['Environment','Alpha'])
+        result_df_y = result_df_y.sort_values(by=['Environment','Alpha'])
+        result_df_theta = result_df_theta.sort_values(by=['Environment','Alpha'])
+        result_df_total = result_df_total.sort_values(by=['Environment','Alpha'])
+        
+        result_df_x = result_df_x.round(3)
+        result_df_y = result_df_y.round(3)
+        result_df_theta = result_df_theta.round(3)
+        result_df_total = result_df_total.round(3)
 
         result_df_x.to_csv(os.path.join('output','tables', 'result_{}_{}_x.csv'.format(cfg.DATA.SETTING, cfg.DATA.SETUP)), index=False)
         result_df_y.to_csv(os.path.join('output','tables', 'result_{}_{}_y.csv'.format(cfg.DATA.SETTING, cfg.DATA.SETUP)), index=False)
@@ -318,42 +327,36 @@ def main(cfg):
         result_df_total.to_csv(os.path.join('output','tables', 'result_{}_{}_total.csv'.format(cfg.DATA.SETTING, cfg.DATA.SETUP)), index=False)
 
         # export to latex
-        result_df_x.to_latex(os.path.join('output','tables', 'result_{}_{}_x.tex'.format(cfg.DATA.SETTING, cfg.DATA.SETUP)), index=False)
-        result_df_y.to_latex(os.path.join('output','tables', 'result_{}_{}_y.tex'.format(cfg.DATA.SETTING, cfg.DATA.SETUP)), index=False)
-        result_df_theta.to_latex(os.path.join('output','tables', 'result_{}_{}_theta.tex'.format(cfg.DATA.SETTING, cfg.DATA.SETUP)), index=False)
-        result_df_total.to_latex(os.path.join('output','tables', 'result_{}_{}_total.tex'.format(cfg.DATA.SETTING, cfg.DATA.SETUP)), index=False)
+        result_df_x.T.to_latex(os.path.join('output','tables', 'result_{}_{}_x.tex'.format(cfg.DATA.SETTING, cfg.DATA.SETUP)), index=True)
+        result_df_y.T.to_latex(os.path.join('output','tables', 'result_{}_{}_y.tex'.format(cfg.DATA.SETTING, cfg.DATA.SETUP)), index=True)
+        result_df_theta.T.to_latex(os.path.join('output','tables', 'result_{}_{}_theta.tex'.format(cfg.DATA.SETTING, cfg.DATA.SETUP)), index=True)
+        result_df_total.T.to_latex(os.path.join('output','tables', 'result_{}_{}_total.tex'.format(cfg.DATA.SETTING, cfg.DATA.SETUP)), index=True)
 
     else:
 
         result_df_total = result_df[total_columns]
-        result_df_total.columns = ['Environment','RNN','LSTM','KF']
-        result_df_total = result_df_total.round(5)
+        result_df_total.columns = ['Environment','RNN','LSTM','GRU','LSTM_ln','KF']
+        result_df_total = result_df_total.round(3)
 
         result_df_total.to_csv(os.path.join('output','tables', 'result_{}_{}.csv'.format(cfg.DATA.SETTING, cfg.DATA.SETUP)), index=False)
 
         #export to latex
-        result_df_total.to_latex(os.path.join('output','tables', 'result_{}_{}.tex'.format(cfg.DATA.SETTING, cfg.DATA.SETUP)), index=False)
-
+        result_df_total.T.to_latex(os.path.join('output','tables', 'result_{}_{}.tex'.format(cfg.DATA.SETTING, cfg.DATA.SETUP)), index=True)
+        print(result_df_total.T)
+    if cfg.DATA.SETTING == '2D':
+        #bar plot results
+        bar_plot(cfg, result_df_x)
+        bar_plot(cfg, result_df_y)
+        bar_plot(cfg, result_df_theta)
+        bar_plot(cfg, result_df_total)
     #bar plot results
     bar_plot(cfg, result_df_total)
 
     print('Done')
 
 def bar_plot(cfg, df):
-    # if cfg.DATA.SETTING == '2D':
-    #     df_plot = df[['RNN','LSTM','GRU','KF','EKF','UKF']]
-    #     df_plot.index = df['Environment']
 
-    #     df_plot.plot(kind="bar",figsize=(15, 8))
-    #     plt.title('Total MAE')
-    #     plt.ylabel('MAE')
-    #     plt.xlabel('Environment')
-    #     plt.xticks(rotation=0)
-    #     plt.legend(loc='upper right')
-
-    #     os.makedirs(os.path.join('output','figures'), exist_ok=True)
-    #     plt.savefig(os.path.join('output','figures','{}_{}.png'.format(cfg.DATA.SETTING, cfg.DATA.SETUP)))
-    df_plot = df[['RNN','LSTM','KF',]]
+    df_plot = df[['RNN','LSTM','GRU','KF','LSTM_ln']]
     df_plot.index = df['Environment']
 
     df_plot.plot(kind="bar",figsize=(15, 8))
@@ -361,7 +364,7 @@ def bar_plot(cfg, df):
     plt.ylabel('MAE')
     plt.xlabel('Environment')
     plt.xticks(rotation=0)
-    plt.legend(loc='upper right')
+    plt.legend(loc='upper left')
 
     os.makedirs(os.path.join('output','figures'), exist_ok=True)
     plt.savefig(os.path.join('output','figures','{}_{}.png'.format(cfg.DATA.SETTING, cfg.DATA.SETUP)))

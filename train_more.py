@@ -385,9 +385,25 @@ def train_best_net(config,cfg, checkpoint=False):
             # torch.save((model.state_dict(), optimizer.state_dict()), path)
         if val_loss < best_val_loss:
             best_val_loss = val_loss
-            torch.save(model.state_dict(), os.path.join(cfg.OUTPUT.OUTPUT_DIR, "model_best.pth"))
+            torch.save(model.state_dict(), os.path.join(cfg.OUTPUT.OUTPUT_DIR, "model_best_{}.pth".format(cfg.MODEL.TYPE)))
         model.train()
 
+def train_more(cfg):
+    # train for 100 epochs more
+    # get data
+    for model in os.listdir(cfg.OUTPUT.OUTPUT_DIR):
+
+        path = os.path.join(cfg.OUTPUT.OUTPUT_DIR, model)
+        with open(path, 'r') as fp:
+            best_config = json.load(fp)
+        if 'LSTM_ln' in model:
+            cfg.MODEL.TYPE = 'LSTM_ln'
+            continue
+        else:
+            cfg.MODEL.TYPE = model.split("_")[-1][:-5]
+        print(best_config)
+        print(cfg)
+        train_best_net(best_config, cfg, checkpoint=True)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Neural networks for robot state estimation")
@@ -407,9 +423,9 @@ if __name__ == "__main__":
     cfg.DATA.TRAIN_DATA_DIR = os.path.abspath(cfg.DATA.TRAIN_DATA_DIR)
     cfg.DATA.EVAL_DATA_DIR = os.path.abspath(cfg.DATA.EVAL_DATA_DIR)
     cfg.OUTPUT.OUTPUT_DIR = os.path.abspath(cfg.OUTPUT.OUTPUT_DIR)
-    cfg.freeze()
+    # cfg.freeze()
     
-    print("running with config:\n{}".format(cfg))
+    # print("running with config:\n{}".format(cfg))
 
     output_dir = cfg.OUTPUT.OUTPUT_DIR
     if output_dir and not os.path.exists(output_dir):
@@ -424,24 +440,15 @@ if __name__ == "__main__":
     #     "sequence_length": 28
     # }
 
-    best_cfg = {
-    "dir": "/home/anees.hashmi/ray_results/train_ray_2023-05-02_01-48-00/train_ray_da207_00004_4_lr=0.0018,num_layers=2,sequence_length=56_2023-05-02_01-50-28",
-    "hidden_size": 32,
-    "lr": 0.0017556246933097342,
-    "metric": 1.5923599917441607,
-    "num_layers": 2,
-    "sequence_length": 56
-    }
+    # best_cfg = {
+    # "dir": "/home/anees.hashmi/ray_results/train_ray_2023-05-02_01-48-00/train_ray_da207_00004_4_lr=0.0018,num_layers=2,sequence_length=56_2023-05-02_01-50-28",
+    # "hidden_size": 32,
+    # "lr": 0.0017556246933097342,
+    # "metric": 1.5923599917441607,
+    # "num_layers": 2,
+    # "sequence_length": 56
+    # }
     # train_best_net(best_cfg, cfg)
-    main(cfg)
+    # main(cfg)
+    train_more(cfg)
 
-def train_more(cfg):
-    # train for 100 epochs more
-    # get data
-    for model in os.listdir(cfg.OUTPUT.OUTPUT_DIR):
-
-        path = os.path.join(cfg.OUTPUT.OUTPUT_DIR, model)
-        with open(path, 'r') as fp:
-            best_config = json.load(fp)
-        
-        train_best_net(best_config, cfg, checkpoint=True)
