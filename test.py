@@ -339,6 +339,7 @@ def main(cfg):
 
         result_df_total = result_df[total_columns]
         result_df_total.columns = ['Environment','RNN','LSTM','GRU','LSTM_ln','KF']
+        result_df_total = result_df_total.sort_values(by=['Environment'])
         result_df_total = result_df_total.round(3)
 
         result_df_total.to_csv(os.path.join('output','tables', 'result_{}_{}.csv'.format(cfg.DATA.SETTING, cfg.DATA.SETUP)), index=False)
