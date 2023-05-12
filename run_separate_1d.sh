@@ -1,5 +1,6 @@
 
-for model in 'RNN' 'LSTM' 'LSTM_ln' 'GRU'
+# for model in 'RNN' 'LSTM' 'LSTM_ln' 'GRU'
+for model in  'GRU' 'LSTM_ln'
 do    
     # 1D case
     for f in ./data/1D/generated_data/*

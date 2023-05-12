@@ -170,6 +170,9 @@ def main(cfg):
             else:
                 cfg.DATA.TRAIN_DATA_DIR = os.path.join(cfg.DATA.EVAL_DATA_DIR, '{}.csv'.format(i.split('/')[0]))
             
+            # save_models(cfg,v, i)
+            # continue
+
             # results['model'] = i.split('/')[1]
             # get data
             test_data = get_data_separate(cfg, v)
@@ -386,6 +389,8 @@ if __name__ == "__main__":
     cfg.OUTPUT.OUTPUT_DIR = os.path.abspath(cfg.OUTPUT.OUTPUT_DIR)
     # cfg.SOLVER.BATCH_SIZE = 50
     # cfg.freeze()
+
+
 
     main(cfg)
 

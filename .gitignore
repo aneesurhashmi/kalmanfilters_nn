@@ -2,3 +2,4 @@
 logs/
 /configs/
 output/
+/results/*
