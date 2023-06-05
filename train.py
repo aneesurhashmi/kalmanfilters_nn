@@ -1,13 +1,13 @@
 import torch
 from torch import nn
-from model import Base
+from model import Base, make_model
 from torch import optim
 import os
 from ray.tune.schedulers import ASHAScheduler
 from ray.tune import CLIReporter
 import ray
 from ray import tune, air
-from utils import train_test_split, get_dataloader, get_input_data, plot_data, get_input_data_1D, append
+from utils import *
 import numpy as np
 import json
 import random
@@ -18,36 +18,36 @@ from tqdm import tqdm
 random.seed(0)
 torch.manual_seed(0)
 
-def get_data_appended(cfg, config):
-    appended_l = []
-    if cfg.DATA.SETTING == '2D':
-        for i,csv_file in enumerate(os.listdir(cfg.DATA.TRAIN_DATA_DIR)):
-            if i == 0:
-                appended_l =  get_input_data(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=os.path.join(cfg.DATA.TRAIN_DATA_DIR,csv_file))
-                continue
-            X =  get_input_data(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=os.path.join(cfg.DATA.TRAIN_DATA_DIR,csv_file))
-            appended_l = append(appended_l,X)
-    elif cfg.DATA.SETTING == '1D':
-        # X =  get_input_data_1D(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=cfg.DATA.TRAIN_DATA_DIR)
-        for i,csv_file in enumerate(os.listdir(cfg.DATA.TRAIN_DATA_DIR)):
-            if i == 0:
-                appended_l =  get_input_data_1D(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=os.path.join(cfg.DATA.TRAIN_DATA_DIR,csv_file))
-                continue
-            X =  get_input_data_1D(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=os.path.join(cfg.DATA.TRAIN_DATA_DIR,csv_file))
-            appended_l = append(appended_l,X)
-    else:
-        raise ValueError("Environment not supported")
-    return appended_l
+# def get_data_appended(cfg, config):
+#     appended_l = []
+#     if cfg.DATA.SETTING == '2D':
+#         for i,csv_file in enumerate(os.listdir(cfg.DATA.TRAIN_DATA_DIR)):
+#             if i == 0:
+#                 appended_l =  get_input_data(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=os.path.join(cfg.DATA.TRAIN_DATA_DIR,csv_file))
+#                 continue
+#             X =  get_input_data(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=os.path.join(cfg.DATA.TRAIN_DATA_DIR,csv_file))
+#             appended_l = append(appended_l,X)
+#     elif cfg.DATA.SETTING == '1D':
+#         # X =  get_input_data_1D(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=cfg.DATA.TRAIN_DATA_DIR)
+#         for i,csv_file in enumerate(os.listdir(cfg.DATA.TRAIN_DATA_DIR)):
+#             if i == 0:
+#                 appended_l =  get_input_data_1D(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=os.path.join(cfg.DATA.TRAIN_DATA_DIR,csv_file))
+#                 continue
+#             X =  get_input_data_1D(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=os.path.join(cfg.DATA.TRAIN_DATA_DIR,csv_file))
+#             appended_l = append(appended_l,X)
+#     else:
+#         raise ValueError("Environment not supported")
+#     return appended_l
 
-def get_data_separate(cfg, config):
+# def get_data_separate(cfg, config):
 
-    if cfg.DATA.SETTING == '2D':
-        X =  get_input_data(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=cfg.DATA.TRAIN_DATA_DIR)
-    elif cfg.DATA.SETTING == '1D':
-        X =  get_input_data_1D(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=cfg.DATA.TRAIN_DATA_DIR)
-    else:
-        raise ValueError("Environment not supported")
-    return X
+#     if cfg.DATA.SETTING == '2D':
+#         X =  get_input_data(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=cfg.DATA.TRAIN_DATA_DIR)
+#     elif cfg.DATA.SETTING == '1D':
+#         X =  get_input_data_1D(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=cfg.DATA.TRAIN_DATA_DIR)
+#     else:
+#         raise ValueError("Environment not supported")
+#     return X
 
 def train_ray(config,cfg):
 
@@ -56,24 +56,6 @@ def train_ray(config,cfg):
         device = "cuda:0"
         
     print("current working directory: {}".format(os.getcwd()))
-    # appended_l = []
-    # if cfg.DATA.SETTING == '2D':
-    #     for i,csv_file in enumerate(os.listdir(cfg.DATA.TRAIN_DATA_DIR)):
-    #         if i == 0:
-    #             appended_l =  get_input_data(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=os.path.join(cfg.DATA.TRAIN_DATA_DIR,csv_file))
-    #             continue
-    #         X =  get_input_data(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=os.path.join(cfg.DATA.TRAIN_DATA_DIR,csv_file))
-    #         appended_l = append(appended_l,X)
-    # elif cfg.DATA.SETTING == '1D':
-    #     # X =  get_input_data_1D(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=cfg.DATA.TRAIN_DATA_DIR)
-    #     for i,csv_file in enumerate(os.listdir(cfg.DATA.TRAIN_DATA_DIR)):
-    #         if i == 0:
-    #             appended_l =  get_input_data_1D(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=os.path.join(cfg.DATA.TRAIN_DATA_DIR,csv_file))
-    #             continue
-    #         X =  get_input_data_1D(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=os.path.join(cfg.DATA.TRAIN_DATA_DIR,csv_file))
-    #         appended_l = append(appended_l,X)
-    # else:
-    #     raise ValueError("Environment not supported")
 
     if cfg.DATA.SETUP == 'appended':
         appended_l = get_data_appended(cfg, config)
@@ -84,26 +66,22 @@ def train_ray(config,cfg):
 
     
     
-    train_data, valid_data = train_test_split(appended_l, test_size=0.2)
+    train_data, valid_data = train_test_split(appended_l, test_size=cfg.DATA.TEST_SIZE)
 
     train_loader = get_dataloader(train_data[0],train_data[1], batch_size=cfg.SOLVER.BATCH_SIZE)
     valid_loader = get_dataloader(valid_data[0],valid_data[1], batch_size=cfg.SOLVER.BATCH_SIZE)
 
     # setup model
     print("Using model: {}".format(cfg.MODEL.TYPE))
-    model = Base(input_size=cfg.MODEL.INPUT_SIZE, 
-                 hidden_size = config["hidden_size"],
-                 num_layers = config["num_layers"], 
-                 output_size = cfg.MODEL.OUTPUT_SIZE, 
-                 model=cfg.MODEL.TYPE,
-                 dropout = cfg.MODEL.DROPOUT)
+
+    model, _ = make_model(cfg)
     
     if torch.cuda.device_count() > 1:
         model = nn.DataParallel(model)
     model.to(device)
 
-    criterion = nn.L1Loss()
-    optimizer = optim.Adam(model.parameters(), lr=config["lr"])
+    criterion = make_loss(cfg)
+    optimizer = make_optimizer(cfg, model)
 
     for epoch in range(cfg.SOLVER.NUM_EPOCHS):
 
@@ -159,10 +137,10 @@ def train_ray(config,cfg):
 
     print("Finished Training")
 
-def test_accuracy(net, test_loader, device="cpu"):
+def test_accuracy(net, test_loader,cfg, device="cpu"):
     
     net.to(device)
-    criterion = nn.L1Loss()
+    criterion = make_loss(cfg)
     loss = 0
     total = 0
     test_pred = []
@@ -217,8 +195,11 @@ def main(cfg):
     results = tuner.fit()
 
     best_trial = results.get_best_result("loss", "min", "last")
-    best_trial.config['dir'] = str(best_trial.log_dir)
-    best_trial.config["metric"] = best_trial.metrics["loss"]
+    if best_trial is not None:
+        best_trial.config['dir'] = str(best_trial.log_dir)
+        best_trial.config[cfg.SOLVER.LOSS] = best_trial.metrics["loss"]
+    else:
+        raise ValueError("No trials found ")
 
     # save best config as json
     
@@ -250,7 +231,7 @@ def main(cfg):
     # model_state, optimizer_state = torch.load(os.path.join(best_checkpoint_dir, "checkpoint"))
     # best_trained_model.load_state_dict(model_state)
 
-    # loss, test_pred = test_accuracy(best_trained_model, test_loader, device=device)
+    # loss, test_pred = test_accuracy(best_trained_model, test_loader,cfg, device=device)
     # print("Best trial test set loss: {}".format(loss))
 
     # to_plot = {
@@ -291,26 +272,34 @@ def train_best_net(config,cfg, checkpoint=False):
         device = "cuda:0"
         
     print("current working directory: {}".format(os.getcwd()))
-    appended_l = []
-    if cfg.DATA.SETTING == '2D':
-        for i,csv_file in enumerate(os.listdir(cfg.DATA.TRAIN_DATA_DIR)):
-            if i == 0:
-                appended_l =  get_input_data(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=os.path.join(cfg.DATA.TRAIN_DATA_DIR,csv_file))
-                continue
-            X =  get_input_data(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=os.path.join(cfg.DATA.TRAIN_DATA_DIR,csv_file))
-            appended_l = append(appended_l,X)
-    elif cfg.DATA.SETTING == '1D':
-        # X =  get_input_data_1D(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=cfg.DATA.TRAIN_DATA_DIR)
-        for i,csv_file in enumerate(os.listdir(cfg.DATA.TRAIN_DATA_DIR)):
-            if i == 0:
-                appended_l =  get_input_data_1D(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=os.path.join(cfg.DATA.TRAIN_DATA_DIR,csv_file))
-                continue
-            X =  get_input_data_1D(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=os.path.join(cfg.DATA.TRAIN_DATA_DIR,csv_file))
-            appended_l = append(appended_l,X)
+
+    if cfg.DATA.SETUP == 'appended':
+        appended_l = get_data_appended(cfg, config)
+    elif cfg.DATA.SETUP == 'separated':
+        appended_l = get_data_separate(cfg, config)
     else:
-        raise ValueError("Environment not supported")
+        raise ValueError("Setup not supported")
+
+    # appended_l = []
+    # if cfg.DATA.SETTING == '2D':
+    #     for i,csv_file in enumerate(os.listdir(cfg.DATA.TRAIN_DATA_DIR)):
+    #         if i == 0:
+    #             appended_l =  get_input_data(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=os.path.join(cfg.DATA.TRAIN_DATA_DIR,csv_file))
+    #             continue
+    #         X =  get_input_data(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=os.path.join(cfg.DATA.TRAIN_DATA_DIR,csv_file))
+    #         appended_l = append(appended_l,X)
+    # elif cfg.DATA.SETTING == '1D':
+    #     # X =  get_input_data_1D(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=cfg.DATA.TRAIN_DATA_DIR)
+    #     for i,csv_file in enumerate(os.listdir(cfg.DATA.TRAIN_DATA_DIR)):
+    #         if i == 0:
+    #             appended_l =  get_input_data_1D(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=os.path.join(cfg.DATA.TRAIN_DATA_DIR,csv_file))
+    #             continue
+    #         X =  get_input_data_1D(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=os.path.join(cfg.DATA.TRAIN_DATA_DIR,csv_file))
+    #         appended_l = append(appended_l,X)
+    # else:
+    #     raise ValueError("Environment not supported")
     
-    train_data, valid_data = train_test_split(appended_l, test_size=0.2)
+    train_data, valid_data = train_test_split(appended_l, test_size=cfg.DATA.TEST_SIZE)
 
     train_loader = get_dataloader(train_data[0],train_data[1], batch_size=cfg.SOLVER.BATCH_SIZE)
     valid_loader = get_dataloader(valid_data[0],valid_data[1], batch_size=cfg.SOLVER.BATCH_SIZE)
@@ -432,6 +421,8 @@ if __name__ == "__main__":
     "num_layers": 2,
     "sequence_length": 56
     }
+    if cfg.MODEL.BEST_CONFIG:
+        train_best_net(best_cfg, cfg)
     # train_best_net(best_cfg, cfg)
     main(cfg)
 

@@ -4,7 +4,7 @@ import os
 import random
 import torch
 import matplotlib.pyplot as plt
-
+from torch import nn
 # set random seed
 random.seed(0)
 
@@ -158,6 +158,37 @@ def get_input_data_1D(seq_len, batch_size, datadir=DATA_DIR):
 
     return new_input_data, new_output_data, new_kp_data
 
+def get_data_appended(cfg, config):
+    appended_l = []
+    if cfg.DATA.SETTING == '2D':
+        for i,csv_file in enumerate(os.listdir(cfg.DATA.TRAIN_DATA_DIR)):
+            if i == 0:
+                appended_l =  get_input_data(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=os.path.join(cfg.DATA.TRAIN_DATA_DIR,csv_file))
+                continue
+            X =  get_input_data(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=os.path.join(cfg.DATA.TRAIN_DATA_DIR,csv_file))
+            appended_l = append(appended_l,X)
+    elif cfg.DATA.SETTING == '1D':
+        # X =  get_input_data_1D(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=cfg.DATA.TRAIN_DATA_DIR)
+        for i,csv_file in enumerate(os.listdir(cfg.DATA.TRAIN_DATA_DIR)):
+            if i == 0:
+                appended_l =  get_input_data_1D(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=os.path.join(cfg.DATA.TRAIN_DATA_DIR,csv_file))
+                continue
+            X =  get_input_data_1D(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=os.path.join(cfg.DATA.TRAIN_DATA_DIR,csv_file))
+            appended_l = append(appended_l,X)
+    else:
+        raise ValueError("Environment not supported")
+    return appended_l
+
+def get_data_separate(cfg, config):
+
+    if cfg.DATA.SETTING == '2D':
+        X =  get_input_data(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=cfg.DATA.TRAIN_DATA_DIR)
+    elif cfg.DATA.SETTING == '1D':
+        X =  get_input_data_1D(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=cfg.DATA.TRAIN_DATA_DIR)
+    else:
+        raise ValueError("Environment not supported")
+    return X
+
 def train_test_split(data, test_size=0.2):
 
     '''
@@ -214,6 +245,125 @@ def append(l1,l2):
     for i,v in zip(l1,l2):
         appended_l.append(np.concatenate((i,v), axis=0))
     return appended_l
+
+def make_optimizer(cfg, model):
+    if cfg.SOLVER.OPTIMIZER_NAME == 'Adam':
+        optimizer = torch.optim.Adam(model.parameters(), lr=cfg.SOLVER.BASE_LR)
+    elif cfg.SOLVER.OPTIMIZER_NAME == 'SGD':
+        optimizer = torch.optim.SGD(model.parameters(), lr=cfg.SOLVER.BASE_LR)
+    else:
+        raise NotImplementedError
+    return optimizer
+
+def make_loss(cfg):
+
+    if cfg.SOLVER.LOSS == 'MSE':
+        criterion = nn.MSELoss()
+    elif cfg.SOLVER.LOSS == 'L1':
+        criterion = nn.L1Loss()
+    else:
+        raise NotImplementedError
+
+    return criterion
+
+def make_result_dict(cfg):
+     #setup result dictionary
+    if cfg.DATA.SETTING == '2D':
+        results = {
+            'environment': [], 
+            'LSTM_x': [], 'LSTM_y': [], 'LSTM_theta': [], 'LSTM_total': [],
+            'RNN_x': [], 'RNN_y': [], 'RNN_theta': [], 'RNN_total': [],
+            'GRU_x': [], 'GRU_y': [], 'GRU_theta': [], 'GRU_total': [],
+            'LSTM_ln_x': [], 'LSTM_ln_y': [], 'LSTM_ln_theta': [], 'LSTM_ln_total': [],
+            'Kalman_x': [], 'Kalman_y': [], 'Kalman_theta': [], 'Kalman_total': [],
+            'EKF_x': [], 'EKF_y': [], 'EKF_theta': [], 'EKF_total': [],
+            'UKF_x': [], 'UKF_y': [], 'UKF_theta': [], 'UKF_total': [],
+            'alpha': []
+        }
+    else:
+        results = {
+            'environment': [],
+            'LSTM': [],
+            'RNN': [],
+            'GRU': [],
+            'LSTM_ln': [],
+            'Kalman': [],   
+        }
+    return results
+    
+def print_table(cfg, results, models):
+
+    result_df = pd.DataFrame(results)
+    final_columns = ['Environment', 'Alpha', 'RNN', 'LSTM', 'GRU', 'LSTM_ln', 'Kalman', 'EKF', 'UKF']
+
+    if cfg.DATA.SETTING == '2D':
+        columns = [['environment','alpha','RNN_{i}','LSTM_{i}','GRU_{i}', 'LSTM_ln_{i}','Kalman_{i}','EKF_{i}','UKF_{i}'] for i in ['x','y','theta','total']]
+
+        result_df_x = result_df[columns[0]]
+        result_df_y = result_df[columns[1]]
+        result_df_theta = result_df[columns[2]]
+        result_df_total = result_df[columns[3]]
+
+        result_df_x.columns = final_columns
+        result_df_y.columns = final_columns
+        result_df_theta.columns = final_columns
+        result_df_total.columns = final_columns
+
+        #sort result by environment and alpha
+
+        result_df_x = result_df_x.sort_values(by=['Environment', 'Alpha']).round(3)
+        result_df_y = result_df_y.sort_values(by=['Environment', 'Alpha']).round(3)
+        result_df_theta = result_df_theta.sort_values(by=['Environment', 'Alpha']).round(3)
+        result_df_total = result_df_total.sort_values(by=['Environment', 'Alpha']).round(3)
+
+        # to csv
+        result_df_x.to_csv(os.path.join('output','tables', 'result_{}_{}_x.csv'.format(cfg.DATA.SETTING, cfg.DATA.SETUP)), index=False)
+        result_df_y.to_csv(os.path.join('output','tables', 'result_{}_{}_y.csv'.format(cfg.DATA.SETTING, cfg.DATA.SETUP)), index=False)
+        result_df_theta.to_csv(os.path.join('output','tables', 'result_{}_{}_theta.csv'.format(cfg.DATA.SETTING, cfg.DATA.SETUP)), index=False)
+        result_df_total.to_csv(os.path.join('output','tables', 'result_{}_{}_total.csv'.format(cfg.DATA.SETTING, cfg.DATA.SETUP)), index=False)
+
+        # export to latex
+        result_df_x.T.to_latex(os.path.join('output','tables', 'result_{}_{}_x.tex'.format(cfg.DATA.SETTING, cfg.DATA.SETUP)), index=True)
+        result_df_y.T.to_latex(os.path.join('output','tables', 'result_{}_{}_y.tex'.format(cfg.DATA.SETTING, cfg.DATA.SETUP)), index=True)
+        result_df_theta.T.to_latex(os.path.join('output','tables', 'result_{}_{}_theta.tex'.format(cfg.DATA.SETTING, cfg.DATA.SETUP)), index=True)
+        result_df_total.T.to_latex(os.path.join('output','tables', 'result_{}_{}_total.tex'.format(cfg.DATA.SETTING, cfg.DATA.SETUP)), index=True)
+
+    else:
+
+        total_columns = ['Environment','RNN','LSTM','GRU','LSTM_ln','Kalman']
+
+        result_df_total = result_df[total_columns]
+        result_df_total = result_df_total.sort_values(by=['Environment']).round(3)
+
+        result_df_total.to_csv(os.path.join('output','tables', 'result_{}_{}_total.csv'.format(cfg.DATA.SETTING, cfg.DATA.SETUP)), index=False)
+        result_df_total.T.to_latex(os.path.join('output','tables', 'result_{}_{}_total.tex'.format(cfg.DATA.SETTING, cfg.DATA.SETUP)), index=True)
+    
+    print(result_df_total.T)
+
+    if cfg.DATA.SETTING == '2D':
+        #bar plot results
+        bar_plot(cfg, result_df_x, name="X")
+        bar_plot(cfg, result_df_y, name="Y")
+        bar_plot(cfg, result_df_theta, name="Theta")
+        bar_plot(cfg, result_df_total, name="Total")
+    #bar plot results
+    else:
+        bar_plot(cfg, result_df_total, name="Total")
+
+def bar_plot(cfg, df, columns=['RNN','LSTM','GRU','LSTM_ln','Kalman'], name="Total", criterion='MAE'):
+
+    df_plot = df[columns]
+    df_plot.index = df['Environment']
+
+    df_plot.plot(kind="bar",figsize=(15, 8))
+    plt.title(name)
+    plt.ylabel(criterion)
+    plt.xlabel('Environment')
+    plt.xticks(rotation=0)
+    plt.legend(loc='upper left')
+
+    os.makedirs(os.path.join('output','figures'), exist_ok=True)
+    plt.savefig(os.path.join('output','figures','{}_{}_{}.png'.format(cfg.DATA.SETTING, cfg.DATA.SETUP, name)))
 
 if __name__ == '__main__':
 
