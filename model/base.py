@@ -3,6 +3,7 @@ import torch
 from model import RNN , LSTM, LSTMLayerNorm
 import model.gru as gru
 import os
+
 _models = {
     "RNN": RNN,
     "LSTM": LSTM,

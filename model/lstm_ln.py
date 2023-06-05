@@ -5,8 +5,44 @@ import torch.nn.functional as F
 from torch import Tensor
 from torch.nn import Parameter
 from torch.autograd import Variable
+import haste_pytorch as haste
 
 use_cuda = torch.cuda.is_available()
+
+class HasteLSTMLayerNorm(nn.Module):
+    def __init__(self, 
+                 input_size,
+                 hidden_size,
+                 num_layers=1,
+                 dropout=0,
+                 bidirectional=0,
+                 zoneout=0,
+                 batch_first=True,
+                 cln=True,
+                 output_size=3,
+                 ) -> None:
+        super().__init__()
+        self.hidden_size = hidden_size
+        self.num_layers = num_layers
+        self.direction = bidirectional + 1
+
+        self.lstm_layers = []
+        for layer in range(num_layers):
+            layer_input_size = input_size if layer == 0 else hidden_size * self.direction
+            lstm_layer = haste.LayerNormLSTM(input_size=layer_input_size, hidden_size=hidden_size, zoneout=zoneout, dropout=dropout, batch_first=batch_first)
+            self.lstm_layers.append(lstm_layer)
+
+        self.fc = nn.Linear(hidden_size, output_size)
+
+    def forward(self, x, hidden=None):
+        h, c = hidden if hidden is not None else (None, None)
+        h = torch.zeros(1, x.size(0), self.hidden_size).to(x.device) if h is None else h
+        c = torch.zeros(1, x.size(0), self.hidden_size).to(x.device) if c is None else c
+        for layer in self.lstm_layers:
+            x, (h, c) = layer(x, (h,c))
+        
+        fc_out = self.fc(x[:, -1, :]) # taking the hidden state/output of the last idenx of the sequence
+        return fc_out, (h, c)
 
 class LSTMLayerNorm(nn.Module):
     def __init__(self,
@@ -45,7 +81,6 @@ class LSTMLayerNorm(nn.Module):
         out, _ = self.lstm(x, (h0, c0))
         fc_out = self.fc(out[:, -1, :])
         return fc_out, out
-
 
 class LSTM_ln(nn.Module):
     def __init__(self,
@@ -404,11 +439,19 @@ class LayerNormLSTM(LSTMcell):
 
 
 if __name__ == '__main__':
-    model = LSTM_ln(50, 100, 2, batch_first=True)
-    # x = Variable(Tensor(50, 32, 50)) # seq_len, batch, input_size
-    x = Variable(Tensor(32, 50, 50)) # batch, seq_len, input_size
-    #h = model.init_hidden(32)
+    input_size = 50 # feature size 
+    hidden_size = 100
+    batch_size = 32
+    seq_len = 50
+    output_size = 3
+    num_layers = 4
+
+    model = HasteLSTMLayerNorm(input_size=input_size, hidden_size = hidden_size, 
+                                output_size = output_size, num_layers = num_layers,
+                                batch_first=True)
+    x = Variable(Tensor(batch_size, seq_len, input_size)) # batch, seq_len, input_size
     h = (Variable(Tensor(2*2, 32, 100)),
          Variable(Tensor(2*2, 32, 100)))
-    print(model(x, h))
+    # print(model(x, h))
+    print(model(x))
     print("")
