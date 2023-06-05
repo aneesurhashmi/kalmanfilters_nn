@@ -18,62 +18,25 @@ from tqdm import tqdm
 random.seed(0)
 torch.manual_seed(0)
 
-# def get_data_appended(cfg, config):
-#     appended_l = []
-#     if cfg.DATA.SETTING == '2D':
-#         for i,csv_file in enumerate(os.listdir(cfg.DATA.TRAIN_DATA_DIR)):
-#             if i == 0:
-#                 appended_l =  get_input_data(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=os.path.join(cfg.DATA.TRAIN_DATA_DIR,csv_file))
-#                 continue
-#             X =  get_input_data(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=os.path.join(cfg.DATA.TRAIN_DATA_DIR,csv_file))
-#             appended_l = append(appended_l,X)
-#     elif cfg.DATA.SETTING == '1D':
-#         # X =  get_input_data_1D(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=cfg.DATA.TRAIN_DATA_DIR)
-#         for i,csv_file in enumerate(os.listdir(cfg.DATA.TRAIN_DATA_DIR)):
-#             if i == 0:
-#                 appended_l =  get_input_data_1D(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=os.path.join(cfg.DATA.TRAIN_DATA_DIR,csv_file))
-#                 continue
-#             X =  get_input_data_1D(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=os.path.join(cfg.DATA.TRAIN_DATA_DIR,csv_file))
-#             appended_l = append(appended_l,X)
-#     else:
-#         raise ValueError("Environment not supported")
-#     return appended_l
-
-# def get_data_separate(cfg, config):
-
-#     if cfg.DATA.SETTING == '2D':
-#         X =  get_input_data(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=cfg.DATA.TRAIN_DATA_DIR)
-#     elif cfg.DATA.SETTING == '1D':
-#         X =  get_input_data_1D(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=cfg.DATA.TRAIN_DATA_DIR)
-#     else:
-#         raise ValueError("Environment not supported")
-#     return X
-
 def train_ray(config,cfg):
-
     device="cpu"
     if torch.cuda.is_available():
         device = "cuda:0"
-        
     print("current working directory: {}".format(os.getcwd()))
-
+    # get data
     if cfg.DATA.SETUP == 'appended':
         appended_l = get_data_appended(cfg, config)
     elif cfg.DATA.SETUP == 'separated':
         appended_l = get_data_separate(cfg, config)
     else:
         raise ValueError("Setup not supported")
-
-    
     
     train_data, valid_data = train_test_split(appended_l, test_size=cfg.DATA.TEST_SIZE)
 
     train_loader = get_dataloader(train_data[0],train_data[1], batch_size=cfg.SOLVER.BATCH_SIZE)
     valid_loader = get_dataloader(valid_data[0],valid_data[1], batch_size=cfg.SOLVER.BATCH_SIZE)
 
-    # setup model
-    print("Using model: {}".format(cfg.MODEL.TYPE))
-
+    print("Using model: {}".format(cfg.MODEL.TYPE)) # setup model
     model, _ = make_model(cfg)
     
     if torch.cuda.device_count() > 1:
@@ -84,12 +47,8 @@ def train_ray(config,cfg):
     optimizer = make_optimizer(cfg, model)
 
     for epoch in range(cfg.SOLVER.NUM_EPOCHS):
-
-        # running_loss = 0.0
-        # epoch_steps = 0
         for i, data in enumerate(train_loader, 0):
-            # get the inputs; data is a list of [inputs, labels]
-            inputs, labels = data
+            inputs, labels = data # get the inputs; data is a list of [inputs, labels]
             inputs, labels = inputs.to(device), labels.to(device)
 
             # zero the parameter gradients
@@ -101,14 +60,6 @@ def train_ray(config,cfg):
             loss.backward()
             optimizer.step()
 
-            # print statistics
-            # running_loss += loss.item()
-            # epoch_steps += 1
-            # if i % cfg.SOLVER.LOG_STEP == 0:  # print every 2000 mini-batches
-            #     print("[%d, %5d] loss: %.3f" % (epoch + 1, i + 1,
-            #                                     running_loss / epoch_steps))
-            # running_loss = 0.0
-
         # Validation loss
         val_loss = 0.0
         val_steps = 0
@@ -118,14 +69,12 @@ def train_ray(config,cfg):
             with torch.no_grad():
                 inputs, labels = data
                 inputs, labels = inputs.to(device), labels.to(device)
-
+                
                 outputs, _ = model(inputs)
-                # _, predicted = torch.max(outputs.data, 1)
-                total += labels.size(0)
-                # correct += (predicted == labels).sum().item()
-
                 loss = criterion(outputs, labels)
+                
                 val_loss += loss.cpu().numpy()
+                total += labels.size(0)
                 val_steps += 1
                 
         if epoch % cfg.SOLVER.LOG_STEP == 0:
@@ -149,7 +98,7 @@ def test_accuracy(net, test_loader,cfg, device="cpu"):
             input, labels = data
             input, labels = input.to(device), labels.to(device)
             outputs, _ = net(input)
-            # _, predicted = torch.max(outputs.data, 1)
+
             total += labels.size(0)
             loss += criterion(outputs, labels).cpu().numpy()
             test_pred.append(outputs.cpu().numpy())
@@ -157,9 +106,7 @@ def test_accuracy(net, test_loader,cfg, device="cpu"):
     return loss / total, test_pred
 
 def main(cfg):
-
     gpus_per_trial = cfg.SOLVER.GPUS_PER_TRIAL
-
     # configurable parameters
     config = {
         "hidden_size": tune.sample_from(lambda _: 2 ** np.random.randint(2, 9)),
@@ -167,12 +114,6 @@ def main(cfg):
         "num_layers": tune.choice([4, 12, 32, 64]),
         'sequence_length': tune.choice([14, 28, 38, 56]),
     }
-
-    # setup device
-    device = 'cpu'
-    if torch.cuda.is_available():
-        device = "cuda:0"
-
 
     # train using raytune
     scheduler = ASHAScheduler(
@@ -200,190 +141,29 @@ def main(cfg):
         best_trial.config[cfg.SOLVER.LOSS] = best_trial.metrics["loss"]
     else:
         raise ValueError("No trials found ")
-
-    # save best config as json
-    
-    # with open('{}/{}/best_config_{}.json'.format(cfg.OUTPUT.OUTPUT_DIR, cfg.MODEL.TYPE, cfg.DATA.TRAIN_DATA_DIR.split('/')[-1][:-4]), 'w') as fp:
-    if cfg.DATA.SETUP == 'appended':
+       
+    if cfg.DATA.SETUP == 'appended':  # save best config as json
         output_path = cfg.OUTPUT.OUTPUT_DIR
     else:
         output_path = os.path.join(cfg.OUTPUT.OUTPUT_DIR, cfg.DATA.TRAIN_DATA_DIR.split('/')[-1][:-4])
 
     os.makedirs(output_path, exist_ok=True)
 
-    # os.makedirs(os.path.join(cfg.OUTPUT.OUTPUT_DIR, cfg.MODEL.TYPE), exist_ok=True)
     with open('{}/best_config_{}.json'.format(output_path, cfg.MODEL.TYPE), 'w') as fp:
         json.dump(best_trial.config, fp, sort_keys=True, indent=4)
-        # json.dump(best_trial.metrics, fp, sort_keys=True, indent=4)
-        # json.dump({'dir':str(best_trial.log_dir)}, fp, sort_keys=True, indent=4)
 
     print("Best trial config: {}".format(best_trial.config))
     print("Best trial final validation loss: {}".format(best_trial.metrics["loss"]))
-    
-    # test on evaluation data
-    # X_test, y_test, y_kalman_test, y_ekf_test, y_ukf_test = get_input_data(seq_len = best_trial.config['sequence_length'], batch_size = params['batch_size'], datadir=EVAL_DATA_DIR)
-    # test_loader = get_dataloader(X_test,y_test, batch_size=params['batch_size'])
 
-    # best_trained_model = _models[params['model_name']](input_size=params['input_size'], hidden_size = best_trial.config["hidden_size"],
-    #                                                    num_layers = best_trial.config["num_layers"], output_size = params['output_size'])
-    
-    # best_checkpoint_dir = best_trial.log_dir
-    # model_state, optimizer_state = torch.load(os.path.join(best_checkpoint_dir, "checkpoint"))
-    # best_trained_model.load_state_dict(model_state)
-
-    # loss, test_pred = test_accuracy(best_trained_model, test_loader,cfg, device=device)
-    # print("Best trial test set loss: {}".format(loss))
-
-    # to_plot = {
-    #     "y_test": y_test,
-    #     "test_pred": test_pred,
-    #     "y_kalman_test": y_kalman_test,
-    #     "y_ekf_test": y_ekf_test,
-    #     "y_ukf_test": y_ukf_test
-    # }
-
-    # plot_data(to_plot)
-
-def get_model(cfg, config):
-    model = Base(input_size=cfg.MODEL.INPUT_SIZE,
-                hidden_size = config["hidden_size"],
-                num_layers = config["num_layers"],
-                output_size=1 if cfg.DATA.SETTING == '1D' else 3,
-                model = cfg.MODEL.TYPE,
-                )
-    
-    
-    if os.path.isdir(config['dir']):
-        chkpoints_list = [i for i in os.listdir(config['dir']) if i.startswith("checkpoint")]
-        last_checkpoint = sorted(chkpoints_list, key=lambda x: int(x.split('_')[-1]))[-1]
-        chkpoint_state_dict, optim = torch.load(os.path.join(config['dir'], last_checkpoint, 'checkpoint'))
-
-        path = os.path.join(config['dir'], last_checkpoint, 'checkpoint')
-    else:
-        chkpoint_state_dict = torch.load(os.path.join(config['dir']))
-        path = os.path.join(config['dir'])
-    model.load_state_dict(chkpoint_state_dict)
-
-    return model, path
-
-def train_best_net(config,cfg, checkpoint=False):
-    device="cpu"
-    if torch.cuda.is_available():
-        device = "cuda:0"
-        
-    print("current working directory: {}".format(os.getcwd()))
-
-    if cfg.DATA.SETUP == 'appended':
-        appended_l = get_data_appended(cfg, config)
-    elif cfg.DATA.SETUP == 'separated':
-        appended_l = get_data_separate(cfg, config)
-    else:
-        raise ValueError("Setup not supported")
-
-    # appended_l = []
-    # if cfg.DATA.SETTING == '2D':
-    #     for i,csv_file in enumerate(os.listdir(cfg.DATA.TRAIN_DATA_DIR)):
-    #         if i == 0:
-    #             appended_l =  get_input_data(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=os.path.join(cfg.DATA.TRAIN_DATA_DIR,csv_file))
-    #             continue
-    #         X =  get_input_data(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=os.path.join(cfg.DATA.TRAIN_DATA_DIR,csv_file))
-    #         appended_l = append(appended_l,X)
-    # elif cfg.DATA.SETTING == '1D':
-    #     # X =  get_input_data_1D(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=cfg.DATA.TRAIN_DATA_DIR)
-    #     for i,csv_file in enumerate(os.listdir(cfg.DATA.TRAIN_DATA_DIR)):
-    #         if i == 0:
-    #             appended_l =  get_input_data_1D(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=os.path.join(cfg.DATA.TRAIN_DATA_DIR,csv_file))
-    #             continue
-    #         X =  get_input_data_1D(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=os.path.join(cfg.DATA.TRAIN_DATA_DIR,csv_file))
-    #         appended_l = append(appended_l,X)
-    # else:
-    #     raise ValueError("Environment not supported")
-    
-    train_data, valid_data = train_test_split(appended_l, test_size=cfg.DATA.TEST_SIZE)
-
-    train_loader = get_dataloader(train_data[0],train_data[1], batch_size=cfg.SOLVER.BATCH_SIZE)
-    valid_loader = get_dataloader(valid_data[0],valid_data[1], batch_size=cfg.SOLVER.BATCH_SIZE)
-
-    # setup model
-    print("Using model: {}".format(cfg.MODEL.TYPE))
-    model = Base(input_size=cfg.MODEL.INPUT_SIZE, hidden_size = config["hidden_size"], 
-                      num_layers = config["num_layers"], output_size = cfg.MODEL.OUTPUT_SIZE, model=cfg.MODEL.TYPE)
-    if checkpoint:
-        model, path = get_model(cfg, config)
-    
-    if torch.cuda.device_count() > 1:
-        model = nn.DataParallel(model)
-    model.to(device)
-
-    # criterion = nn.MSELoss()
-    criterion = nn.L1Loss(reduction="sum")
-    optimizer = optim.Adam(model.parameters(), lr=config["lr"])
-
-    best_val_loss = np.inf
-    for epoch in tqdm(range(cfg.SOLVER.NUM_EPOCHS)):
-
-        running_loss = 0.0
-        # epoch_steps = 0
-        model.train()
-        for i, data in enumerate(train_loader, 0):
-            # get the inputs; data is a list of [inputs, labels]
-            inputs, labels = data
-            inputs, labels = inputs.to(device), labels.to(device)
-
-            # zero the parameter gradients
-            optimizer.zero_grad()
-
-            # forward + backward + optimize
-            outputs, hidden = model(inputs)
-            loss = criterion(outputs, labels)
-            loss.backward()
-            optimizer.step()
-
-            # print statistics
-            # running_loss += loss.item()
-            # epoch_steps += 1
-            # if i % cfg.SOLVER.LOG_STEP == 0:  # print every 2000 mini-batches
-            #     print("[%d, %5d] loss: %.3f" % (epoch + 1, i + 1,
-            #                                     running_loss / epoch_steps))
-            # running_loss = 0.0
-        # print("Training loss: {}".format(loss.cpu().numpy()))
-        # Validation loss
-        val_loss = 0.0
-        val_steps = 0
-        total = 0
-        correct = 0
-        model.eval()
-        for i, data in enumerate(valid_loader, 0):
-            with torch.no_grad():
-                inputs, labels = data
-                inputs, labels = inputs.to(device), labels.to(device)
-
-                outputs, _ = model(inputs)
-                # _, predicted = torch.max(outputs.data, 1)
-                total += labels.size(0)
-                # correct += (predicted == labels).sum().item()
-
-                loss = criterion(outputs, labels)
-                val_loss += loss.cpu().numpy()
-                val_steps += 1
-        
-        # val_loss /= len(valid_loader)
-
-        # with tune.checkpoint_dir(epoch) as checkpoint_dir:
-            # path = os.path.join(checkpoint_dir, "checkpoint")
-            # torch.save((model.state_dict(), optimizer.state_dict()), path)
-        if val_loss < best_val_loss:
-            best_val_loss = val_loss
-            torch.save(model.state_dict(), os.path.join(cfg.OUTPUT.OUTPUT_DIR, "model_best.pth"))
-        model.train()
-
+# -------------------------------------------------------------------------------------------------------- #
+# ----------------------------------------------- MAIN ---------------------------------------------------- #
+# -------------------------------------------------------------------------------------------------------- #
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Neural networks for robot state estimation")
     parser.add_argument(
         "--config_file", default="", help="path to config file", type=str
     )
-
     parser.add_argument("opts", help="Modify config options using the command-line", default=None,
                         nargs=argparse.REMAINDER)
     args = parser.parse_args()
@@ -403,30 +183,8 @@ if __name__ == "__main__":
     output_dir = cfg.OUTPUT.OUTPUT_DIR
     if output_dir and not os.path.exists(output_dir):
         os.makedirs(output_dir)
-    # main(cfg)
-    # best_cfg = {
-    #     "dir": "/home/anees.hashmi/ray_results/train_ray_2023-05-04_14-46-28/train_ray_f11dc_00011_11_lr=0.0002,num_layers=4,sequence_length=28_2023-05-04_16-20-25",
-    #     "hidden_size": 64,
-    #     "lr": 0.0002337221208072454,
-    #     "metric": 15.028940420884352,
-    #     "num_layers": 4,
-    #     "sequence_length": 28
-    # }
 
-    best_cfg = {
-    "dir": "/home/anees.hashmi/ray_results/train_ray_2023-05-02_01-48-00/train_ray_da207_00004_4_lr=0.0018,num_layers=2,sequence_length=56_2023-05-02_01-50-28",
-    "hidden_size": 32,
-    "lr": 0.0017556246933097342,
-    "metric": 1.5923599917441607,
-    "num_layers": 2,
-    "sequence_length": 56
-    }
-    if cfg.MODEL.BEST_CONFIG:
-        train_best_net(best_cfg, cfg)
-    # train_best_net(best_cfg, cfg)
     main(cfg)
-
-def train_more(cfg):
     # train for 100 epochs more
     # get data
     for model in os.listdir(cfg.OUTPUT.OUTPUT_DIR):

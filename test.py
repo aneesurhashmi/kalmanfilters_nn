@@ -16,7 +16,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 def test_accuracy(net, test_loader, criterion=nn.MSELoss(), device="cpu"):
-    
     net.to(device)
     loss = 0
     total = 0
@@ -55,7 +54,6 @@ def get_model(cfg, config):
                 model = cfg.MODEL.TYPE,
                 )
     
-    
     if os.path.isdir(config['dir']):
         chkpoints_list = [i for i in os.listdir(config['dir']) if i.startswith("checkpoint")]
         last_checkpoint = sorted(chkpoints_list, key=lambda x: int(x.split('_')[-1]))[-1]
@@ -69,37 +67,6 @@ def get_model(cfg, config):
     model.load_state_dict(chkpoint_state_dict)
 
     return model, path
-
-def get_data_separate(cfg, config):
-
-    if cfg.DATA.SETTING == '2D':
-        X =  get_input_data(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=cfg.DATA.TRAIN_DATA_DIR)
-    elif cfg.DATA.SETTING == '1D':
-        X =  get_input_data_1D(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=cfg.DATA.TRAIN_DATA_DIR)
-    else:
-        raise ValueError("Environment not supported")
-    return X
-
-def get_data_appended(cfg, config):
-    appended_l = []
-    if cfg.DATA.SETTING == '2D':
-        for i,csv_file in enumerate(os.listdir(cfg.DATA.TRAIN_DATA_DIR)):
-            if i == 0:
-                appended_l =  get_input_data(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=os.path.join(cfg.DATA.TRAIN_DATA_DIR,csv_file))
-                continue
-            X =  get_input_data(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=os.path.join(cfg.DATA.TRAIN_DATA_DIR,csv_file))
-            appended_l = append(appended_l,X)
-    elif cfg.DATA.SETTING == '1D':
-        # X =  get_input_data_1D(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=cfg.DATA.TRAIN_DATA_DIR)
-        for i,csv_file in enumerate(os.listdir(cfg.DATA.TRAIN_DATA_DIR)):
-            if i == 0:
-                appended_l =  get_input_data_1D(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=os.path.join(cfg.DATA.TRAIN_DATA_DIR,csv_file))
-                continue
-            X =  get_input_data_1D(seq_len = config['sequence_length'], batch_size = cfg.SOLVER.BATCH_SIZE, datadir=os.path.join(cfg.DATA.TRAIN_DATA_DIR,csv_file))
-            appended_l = append(appended_l,X)
-    else:
-        raise ValueError("Environment not supported")
-    return appended_l
 
 def save_models(cfg,path, v, i):
      # print('path', path,'\n')
@@ -121,15 +88,11 @@ def get_configs(cfg):
     if cfg.DATA.SETUP == 'separated':
         for environemnt in os.listdir(cfg.OUTPUT.OUTPUT_DIR):
             for model in os.listdir(os.path.join(cfg.OUTPUT.OUTPUT_DIR, environemnt)):
-
                 path = os.path.join(cfg.OUTPUT.OUTPUT_DIR, environemnt, model)
-
                 with open(path, 'r') as fp:
                     best_config = json.load(fp)
                 if 'LSTM_ln' in model:
                     index = f'{environemnt}/LSTM_ln'
-                    # print(index)
-                    # continue
                 else:
                     index = f'{environemnt}/{model.split("_")[-1][:-5]}'
                 configs[index] = best_config
@@ -141,8 +104,6 @@ def get_configs(cfg):
                 best_config = json.load(fp)
             if 'LSTM_ln' in model:
                     index = 'LSTM_ln'
-                    # print(index)
-                    # continue
             else:
                 index = f'{model.split("_")[-1][:-5]}'
             configs[index] = best_config
@@ -306,8 +267,6 @@ def main(cfg):
     
 
     print('Done')
-
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Neural networks for robot state estimation")
