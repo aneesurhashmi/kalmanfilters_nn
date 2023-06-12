@@ -109,10 +109,10 @@ def main(cfg):
     gpus_per_trial = cfg.SOLVER.GPUS_PER_TRIAL
     # configurable parameters
     config = {
-        "hidden_size": tune.sample_from(lambda _: 2 ** np.random.randint(2, 9)),
-        "lr": tune.loguniform(1e-4, 1e-1),
-        "num_layers": tune.choice([4, 12, 32, 64]),
-        'sequence_length': tune.choice([14, 28, 38, 56]),
+        "hidden_size": tune.sample_from(lambda _: 2 ** np.random.randint(2, 3)),
+        "lr": tune.loguniform(1e-1, 1e-1),
+        "num_layers": tune.choice([4]),
+        'sequence_length': tune.choice([14]),
     }
 
     # train using raytune
@@ -187,10 +187,10 @@ if __name__ == "__main__":
     main(cfg)
     # train for 100 epochs more
     # get data
-    for model in os.listdir(cfg.OUTPUT.OUTPUT_DIR):
+    # for model in os.listdir(cfg.OUTPUT.OUTPUT_DIR):
 
-        path = os.path.join(cfg.OUTPUT.OUTPUT_DIR, model)
-        with open(path, 'r') as fp:
-            best_config = json.load(fp)
+    #     path = os.path.join(cfg.OUTPUT.OUTPUT_DIR, model)
+    #     with open(path, 'r') as fp:
+    #         best_config = json.load(fp)
         
-        train_best_net(best_config, cfg, checkpoint=True)
+    #     train_best_net(best_config, cfg, checkpoint=True)

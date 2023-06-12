@@ -1,14 +1,14 @@
 from torch import nn
 import torch
-from model import RNN , LSTM, LSTMLayerNorm
+from model import RNN , LSTM, LSTMLayerNorm, HasteLSTMLayerNorm
 import model.gru as gru
 import os
 
 _models = {
     "RNN": RNN,
     "LSTM": LSTM,
-    "LSTM_ln": LSTMLayerNorm,
-    "GRU": gru.GRU
+    "LSTM_ln": HasteLSTMLayerNorm,
+    "GRU": gru.HasteGRU
 }
 
 class Base(nn.Module):

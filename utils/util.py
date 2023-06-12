@@ -358,3 +358,5 @@ if __name__ == '__main__':
         appended_l = append(appended_l,X)
         if len([i.shape for i in appended_l if np.isnan(i).any()]):
             print([i.shape for i in appended_l if np.isnan(i).any()])
+
+

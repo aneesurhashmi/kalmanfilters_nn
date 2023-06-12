@@ -31,7 +31,8 @@ class HasteLSTMLayerNorm(nn.Module):
             layer_input_size = input_size if layer == 0 else hidden_size * self.direction
             lstm_layer = haste.LayerNormLSTM(input_size=layer_input_size, hidden_size=hidden_size, zoneout=zoneout, dropout=dropout, batch_first=batch_first)
             self.lstm_layers.append(lstm_layer)
-
+            
+        self.lstm_layers = nn.ModuleList(self.lstm_layers)
         self.fc = nn.Linear(hidden_size, output_size)
 
     def forward(self, x, hidden=None):
